@@ -18,17 +18,37 @@ class venusOsDashBoardEditor extends HTMLElement {
                 sl-tab-group {
                   width: 100%;
                   --sl-tab-border-color: var(--divider-color, #ccc);
+                  --indicator-color: var(--primary-color, #03a9f4);
+                }
+                sl-tab {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 500;
+                }
+                sl-tab ha-icon {
+                    margin-right: 8px;
+                    --mdc-icon-size: 20px;
                 }
                 sl-tab-panel {
                   padding: 1em;
+                  background: var(--card-background-color);
                 }
               </style>
             
               <sl-tab-group id="tab-group">
-                <sl-tab slot="nav" panel="conf" data-tab="0" active>Conf.</sl-tab>
-                <sl-tab slot="nav" panel="conf" data-tab="1">Col. 1</sl-tab>
-                <sl-tab slot="nav" panel="conf" data-tab="2">Col. 2</sl-tab>
-                <sl-tab slot="nav" panel="conf" data-tab="3">Col. 3</sl-tab>
+                <sl-tab slot="nav" panel="conf" data-tab="0" active>
+                    <ha-icon icon="mdi:cog"></ha-icon> Conf.
+                </sl-tab>
+                <sl-tab slot="nav" panel="conf" data-tab="1">
+                    <ha-icon icon="mdi:view-column"></ha-icon> Col. 1
+                </sl-tab>
+                <sl-tab slot="nav" panel="conf" data-tab="2">
+                    <ha-icon icon="mdi:view-column"></ha-icon> Col. 2
+                </sl-tab>
+                <sl-tab slot="nav" panel="conf" data-tab="3">
+                    <ha-icon icon="mdi:view-column"></ha-icon> Col. 3
+                </sl-tab>
             
                 <sl-tab-panel id="sl-tab-content" name="conf">
                   <div id="tab-content" class="content"></div>
