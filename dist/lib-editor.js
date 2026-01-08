@@ -357,35 +357,30 @@ export function subtabRender(box, config, hass, appendTo) {
         
         <ha-expansion-panel outlined id="subPanel_entities2" header="${t("subtabRender", "header_footer_title")}">
             <div class="col inner">
-                <div class="row">
-                    <ha-entity-picker
-                        label="${t("subtabRender", "entity_header")}"
-                        id="header_sensor"
-                        data-path="devices.${box}.headerEntity"
-                    >
-                    </ha-entity-picker>
-                    <ha-entity-picker
-                        label="${t("subtabRender", "entity_footer")}"
-                        id="footer1_sensor"
-                        data-path="devices.${box}.footerEntity1"
-                    >
-                    </ha-entity-picker>
-                </div>
-                
-                <div class="row">
-                    <ha-entity-picker
-                        label="${t("subtabRender", "entity2_footer")}"
-                        id="footer2_sensor"
-                        data-path="devices.${box}.footerEntity2"
-                    >
-                    </ha-entity-picker>
-                    <ha-entity-picker
-                        label="${t("subtabRender", "entity3_footer")}"
-                        id="footer3_sensor"
-                        data-path="devices.${box}.footerEntity3"
-                    >
-                    </ha-entity-picker>
-                </div>
+                <ha-entity-picker
+                    label="${t("subtabRender", "entity_header")}"
+                    id="header_sensor"
+                    data-path="devices.${box}.headerEntity"
+                >
+                </ha-entity-picker>
+                <ha-entity-picker
+                    label="${t("subtabRender", "entity_footer")}"
+                    id="footer1_sensor"
+                    data-path="devices.${box}.footerEntity1"
+                >
+                </ha-entity-picker>
+                <ha-entity-picker
+                    label="${t("subtabRender", "entity2_footer")}"
+                    id="footer2_sensor"
+                    data-path="devices.${box}.footerEntity2"
+                >
+                </ha-entity-picker>
+                <ha-entity-picker
+                    label="${t("subtabRender", "entity3_footer")}"
+                    id="footer3_sensor"
+                    data-path="devices.${box}.footerEntity3"
+                >
+                </ha-entity-picker>
             </div>
         </ha-expansion-panel>
         
