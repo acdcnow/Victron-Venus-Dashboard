@@ -18,6 +18,7 @@ export default {
     sensor_title: "Main sensor configuration",
     entity_choice: "Entity picker",
     entity2_choice: "Secondary entity picker",
+    decimals_choice: "Decimals",
     enable_graph: "Enable graphic",
     enable_gauge: "Enable gauge in %",
     warning_gauge: "Can only be enabled if the unit of measurement is %",
