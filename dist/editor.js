@@ -15,24 +15,43 @@ class venusOsDashBoardEditor extends HTMLElement {
             
             this.shadowRoot.innerHTML = `
               <style>
+                /* Force Tab Layout */
                 sl-tab-group {
+                  display: flex;
+                  flex-wrap: wrap;
                   width: 100%;
-                  --sl-tab-border-color: var(--divider-color, #ccc);
+                  border-bottom: 1px solid var(--divider-color, #ccc);
                   --indicator-color: var(--primary-color, #03a9f4);
                 }
                 sl-tab {
+                    flex: 1; /* Distribute space evenly */
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    border-bottom: 2px solid transparent;
+                    color: var(--secondary-text-color);
                     font-weight: 500;
+                    white-space: nowrap;
+                }
+                sl-tab[active] {
+                    border-bottom-color: var(--indicator-color);
+                    color: var(--primary-text-color);
                 }
                 sl-tab ha-icon {
                     margin-right: 8px;
                     --mdc-icon-size: 20px;
                 }
                 sl-tab-panel {
+                  display: none; /* Hidden by default */
+                  width: 100%;
                   padding: 1em;
                   background: var(--card-background-color);
+                  box-sizing: border-box;
+                }
+                sl-tab-panel[active] {
+                  display: block; /* Show when active */
                 }
               </style>
             
@@ -58,21 +77,6 @@ class venusOsDashBoardEditor extends HTMLElement {
             
             const tabGroup = this.shadowRoot.querySelector('#tab-group');
             
-            /*tabGroup.addEventListener('sl-tab-show', (event) => {
-                
-              const panelName = event.detail.name; // "conf", "col1", etc.
-              const tabIndexMap = {
-                conf: 0,
-                col1: 1,
-                col2: 2,
-                col3: 3,
-              };
-              this._currentTab = tabIndexMap[panelName] ?? 0;
-              this.renderTabContent();
-            });*/
-            
-            
-            
             const style = document.createElement('style');
             style.textContent = css();
             tabGroup.appendChild(style);
@@ -89,34 +93,31 @@ class venusOsDashBoardEditor extends HTMLElement {
     
     renderTabContent() {
         
+        // Manual active class management since we are faking the tabs behavior a bit
+        this.shadowRoot.querySelectorAll('#tab-group sl-tab').forEach(tab => {
+            if (parseInt(tab.getAttribute('data-tab')) === this._currentTab) {
+                tab.setAttribute('active', '');
+            } else {
+                tab.removeAttribute('active');
+            }
+        });
+        this.shadowRoot.querySelectorAll('#tab-group sl-tab-panel').forEach(panel => {
+            // Logic to show panel, currently we use one panel 'conf' and inject content
+            // So just ensure the main panel is active
+            panel.setAttribute('active', '');
+        });
+
         if (this._currentTab === 0) {
-            
             libEditor.tab1Render(this);
-            
-            console.log("conf.");
-            
         } else if (this._currentTab === 1) {
-            
             libEditor.tabColRender(1, this);
-            
-            console.log("tab 1");
-    
         } else if (this._currentTab === 2) {
-            
             libEditor.tabColRender(2, this);
-            
-            console.log("tab 2");
-            
         } else if (this._currentTab === 3) {
-            
             libEditor.tabColRender(3, this);
-            
-            console.log("tab 3");
-            
         }
     
         libEditor.attachInputs(this);
-        
     }
   
     set hass(hass) {
