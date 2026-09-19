@@ -728,6 +728,19 @@ async function testEditor() {
         if (untranslated.length > 0) {
             results.push({ name: `editor: untranslated (${language})`, ok: false, detail: untranslated.join(", ") });
         }
+
+        // The colour pickers are not ha-form fields, so they are checked here.
+        const colorProblems = [...editor.shadowRoot.querySelectorAll("vv-color-field")].flatMap(
+            (field) => {
+                const key = field.getAttribute("data-key");
+                const problems = [];
+                if (!field.label || field.label.startsWith("⚠️")) problems.push(`label:${key}`);
+                if (!field.helper || field.helper.startsWith("⚠️")) problems.push(`helper:${key}`);
+                if (!field.clearLabel || field.clearLabel.startsWith("⚠️")) problems.push(`clear:${key}`);
+                return problems;
+            }
+        );
+        equal(`editor: colour fields are complete (${language})`, colorProblems.join(", "), "");
     }
 
     editor.hass = mockHass(standardStates());
@@ -776,21 +789,70 @@ async function testEditor() {
     await tick(20);
     equal("editor: background preset written", editor.value.background.preset, "gradient");
 
-    backgroundForm.setValue("background_color", "#102030");
-    await tick(20);
-    equal("editor: background colour written", editor.value.background.color, "#102030");
-
     backgroundForm.setValue("background_opacity", 40);
     await tick(20);
     equal("editor: background opacity written", editor.value.background.opacity, 40);
 
     const colorsForm = [...editor.shadowRoot.querySelectorAll("ha-form")].find((form) =>
-        (form.schema || []).some((item) => item.name === "color_box")
+        (form.schema || []).some((item) => item.name === "colors_mode")
     );
-    colorsForm.setValues({ colors_mode: "custom", color_box: "#aabbcc" });
+    check("editor: colour mode form exists", Boolean(colorsForm));
+    colorsForm.setValue("colors_mode", "custom");
     await tick(20);
     equal("editor: colour mode written", editor.value.colors.mode, "custom");
-    equal("editor: colour slot written", editor.value.colors.box, "#aabbcc");
+
+    // Colours have a graphical picker next to a free text field
+    const colorField = (key) =>
+        editor.shadowRoot.querySelector(`vv-color-field[data-key="${key}"]`);
+    equal(
+        "editor: one picker per colour option",
+        editor.shadowRoot.querySelectorAll("vv-color-field").length,
+        15
+    );
+
+    const boxColor = colorField("color_box");
+    check("editor: colour picker exists", Boolean(boxColor));
+    equal("editor: the picker is labelled", boxColor.label, "Device background");
+
+    const swatch = boxColor.shadowRoot.querySelector(".swatch");
+    swatch.value = "#aabbcc";
+    swatch.dispatchEvent(new Event("input"));
+    await tick(20);
+    equal("editor: colour written with the picker", editor.value.colors.box, "#aabbcc");
+
+    // A CSS value still works, the picker only marks it as not plaineditable
+    boxColor.setValue("var(--accent-color)");
+    await tick(20);
+    equal("editor: css colour value written", editor.value.colors.box, "var(--accent-color)");
+    check(
+        "editor: the picker marks a css value",
+        boxColor.shadowRoot.querySelector(".swatch").classList.contains("swatch--custom")
+    );
+
+    // The background colours are pickers as well
+    const gradientFrom = colorField("background_from");
+    gradientFrom.setValue("#0b1e33");
+    await tick(20);
+    equal("editor: background colour written", editor.value.background.from, "#0b1e33");
+
+    // Clearing removes the option, exactly like the text fields
+    boxColor.setValue("");
+    await tick(20);
+    check(
+        "editor: clearing a colour removes the key",
+        editor.value.colors.box === undefined,
+        JSON.stringify(editor.value.colors)
+    );
+
+    // Editing one panel must never discard what another panel changed: the
+    // fields write into the live configuration, not into a stale snapshot.
+    boxColor.setValue("#aabbcc");
+    await tick(20);
+    backgroundForm.setValue("background_opacity", 60);
+    await tick(20);
+    equal("editor: another panel keeps the colour", editor.value.colors.box, "#aabbcc");
+    equal("editor: the colour panel keeps the mode", editor.value.colors.mode, "custom");
+    equal("editor: the other panel keeps its own change", editor.value.background.opacity, 60);
 
     const numbersForm = [...editor.shadowRoot.querySelectorAll("ha-form")].find((form) =>
         (form.schema || []).some((item) => item.name === "numbers_decimals")
@@ -1336,6 +1398,75 @@ async function testEditorCoverage() {
 }
 
 /* ------------------------------------------------------------------ *
+ * 10. Colour field
+ * ------------------------------------------------------------------ */
+
+async function testColorField() {
+    const { toHexColor } = await import("../dist/color-field.js");
+
+    equal("colour: six digit hex is kept", toHexColor("#AABBCC"), "#aabbcc");
+    equal("colour: three digit hex is expanded", toHexColor("#abc"), "#aabbcc");
+    equal("colour: a colour name is resolved", toHexColor("blue"), "#0000ff");
+    equal("colour: rgb() is resolved", toHexColor("rgb(1, 2, 3)"), "#010203");
+    equal("colour: an empty value has no colour", toHexColor(""), "");
+    equal("colour: an unknown colour has no picker value", toHexColor("definitelynotacolour"), "");
+    equal(
+        "colour: an undefined variable has no picker value",
+        toHexColor("var(--definitely-not-a-colour)"),
+        ""
+    );
+
+    const field = document.createElement("vv-color-field");
+    document.body.appendChild(field);
+    field.label = "Device background";
+    field.helper = "Pick a colour";
+    field.clearLabel = "Clear the colour";
+    field.value = "#aabbcc";
+
+    const swatch = field.shadowRoot.querySelector(".swatch");
+    const input = field.shadowRoot.querySelector(".value");
+    equal("colour field: the picker shows the value", swatch.value, "#aabbcc");
+    equal("colour field: the text field shows the value", input.value, "#aabbcc");
+    equal(
+        "colour field: the label is rendered",
+        field.shadowRoot.querySelector(".label").textContent,
+        "Device background"
+    );
+    equal(
+        "colour field: the helper is rendered",
+        field.shadowRoot.querySelector(".helper").textContent,
+        "Pick a colour"
+    );
+    equal(
+        "colour field: the clear button is named",
+        field.shadowRoot.querySelector(".clear").getAttribute("aria-label"),
+        "Clear the colour"
+    );
+
+    const changes = [];
+    field.addEventListener("value-changed", (event) => changes.push(event.detail.value));
+
+    swatch.value = "#123456";
+    swatch.dispatchEvent(new Event("input"));
+    equal("colour field: the picker emits the new colour", changes[0], "#123456");
+    equal("colour field: the picker updates the value", field.value, "#123456");
+
+    input.value = "var(--accent-color)";
+    input.dispatchEvent(new Event("change"));
+    equal("colour field: the text field emits a css value", changes[1], "var(--accent-color)");
+    check("colour field: the picker marks a css value", swatch.classList.contains("swatch--custom"));
+
+    field.shadowRoot.querySelector(".clear").click();
+    equal("colour field: the clear button empties the value", field.value, "");
+    check(
+        "colour field: the clear button hides itself when empty",
+        field.shadowRoot.querySelector(".clear").hidden === true
+    );
+
+    field.remove();
+}
+
+/* ------------------------------------------------------------------ *
  * Runner
  * ------------------------------------------------------------------ */
 
@@ -1350,6 +1481,7 @@ async function run() {
     testLineShape();
     await testEditor();
     await testEditorCoverage();
+    await testColorField();
 
     const failed = results.filter((result) => !result.ok);
     const output = document.getElementById("results");

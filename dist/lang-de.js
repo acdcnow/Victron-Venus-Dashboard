@@ -110,6 +110,7 @@ export default {
     background_css: "Rohes CSS für die Hintergrundebene, zum Beispiel ein wiederholter Verlauf.",
     colors_mode: "Design folgt Home Assistant, Victron behält die klassische dunkle Palette, Eigenes startet beim Design.",
     color_dashboard: "Akzeptiert #rrggbb, rgb(), einen Farbnamen oder eine CSS-Variable. Leer verwendet den Designwert.",
+    color_value: "Farbe auswählen oder einen beliebigen CSS-Farbwert eingeben, zum Beispiel #rrggbb, einen Farbnamen oder var(--accent-color).",
     numbers_decimals: "Leer zeigt den Wert genau so, wie Home Assistant ihn meldet.",
     numbers_auto: "Verwendet die Genauigkeit, die du für die Entität in Home Assistant eingestellt hast.",
     numbers_main_only: "Lässt Zustände wie on, off, unknown oder unavailable unverändert.",
@@ -154,7 +155,8 @@ export default {
   },
   actions: {
     add_link: "Verbindung hinzufügen",
-    remove_link: "Verbindung entfernen"
+    remove_link: "Verbindung entfernen",
+    clear_color: "Farbe löschen"
   },
   messages: {
     no_links: "Es sind noch keine Verbindungen eingerichtet.",

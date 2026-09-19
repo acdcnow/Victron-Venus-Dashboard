@@ -110,6 +110,7 @@ export default {
     background_css: "CSS non elaborato per il livello di sfondo, per esempio un gradiente ripetuto.",
     colors_mode: "Tema segue Home Assistant, Victron mantiene la classica palette scura, Personalizzati parte dal tema.",
     color_dashboard: "Accetta #rrggbb, rgb(), un nome di colore o una variabile CSS. Vuoto usa il valore del tema.",
+    color_value: "Scegli un colore o digita un valore CSS, per esempio #rrggbb, un nome di colore o var(--accent-color).",
     numbers_decimals: "Vuoto mostra il valore esattamente come lo riporta Home Assistant.",
     numbers_auto: "Usa la precisione configurata per l'entità in Home Assistant.",
     numbers_main_only: "Lascia invariati stati come on, off, unknown o unavailable.",
@@ -154,7 +155,8 @@ export default {
   },
   actions: {
     add_link: "Aggiungi collegamento",
-    remove_link: "Rimuovi collegamento"
+    remove_link: "Rimuovi collegamento",
+    clear_color: "Cancella il colore"
   },
   messages: {
     no_links: "Non è ancora configurato alcun collegamento.",

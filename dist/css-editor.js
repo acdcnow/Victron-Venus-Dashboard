@@ -50,6 +50,18 @@ export function css() {
             display: block;
         }
 
+        .field-set {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ha-space-3, 12px);
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--ha-space-3, 12px);
+        }
+
         .row-header {
             display: flex;
             align-items: center;
@@ -100,6 +112,10 @@ export function css() {
         @media (max-width: 600px) {
             .panel-content {
                 padding-inline: 0;
+            }
+
+            .color-grid {
+                grid-template-columns: 1fr;
             }
         }
     `;

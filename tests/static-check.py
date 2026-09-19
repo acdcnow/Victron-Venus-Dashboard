@@ -38,6 +38,7 @@ REQUIRED_FILES = [
     "dist/lib-venus.js",
     "dist/lib-editor.js",
     "dist/editor.js",
+    "dist/color-field.js",
     "dist/css-common.js",
     "dist/css-editor.js",
     *[f"dist/lang-{language}.js" for language in LANGUAGES],

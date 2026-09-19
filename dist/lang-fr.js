@@ -110,6 +110,7 @@ export default {
     background_css: "CSS brut pour la couche d'arrière-plan, par exemple un dégradé répété.",
     colors_mode: "Thème suit Home Assistant, Victron conserve la palette sombre classique, Personnalisé part du thème.",
     color_dashboard: "Accepte #rrggbb, rgb(), un nom de couleur ou une variable CSS. Vide utilise la valeur du thème.",
+    color_value: "Choisissez une couleur ou saisissez une valeur CSS, par exemple #rrggbb, un nom de couleur ou var(--accent-color).",
     numbers_decimals: "Vide affiche la valeur telle que Home Assistant la rapporte.",
     numbers_auto: "Utilise la précision configurée pour l'entité dans Home Assistant.",
     numbers_main_only: "Laisse les états comme on, off, unknown ou unavailable inchangés.",
@@ -154,7 +155,8 @@ export default {
   },
   actions: {
     add_link: "Ajouter une liaison",
-    remove_link: "Supprimer la liaison"
+    remove_link: "Supprimer la liaison",
+    clear_color: "Effacer la couleur"
   },
   messages: {
     no_links: "Aucune liaison n'est encore configurée.",

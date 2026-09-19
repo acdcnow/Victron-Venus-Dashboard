@@ -4,6 +4,36 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [semantic versioning](https://semver.org/).
 
+## [2.0.0-beta.3] - 2026-09-19
+
+A graphical colour picker for every colour option, plus a bug that silently
+dropped settings when two panels were edited one after the other.
+
+> This is a pre-release and is not merged into `main` yet. Enable beta versions for
+> this repository in HACS to install it.
+
+### Added
+
+* **Graphical colour picker.** All fifteen colour options (the four background
+  colours and the eleven colour slots) now have a swatch that opens the picker and
+  writes a plain `#rrggbb` value. The text field next to it still accepts any CSS
+  colour, so `var(--accent-color)` and friends keep working. A value the picker
+  cannot display is marked with a dashed border instead of being overwritten, and
+  the clear button next to it empties the option, which falls back to the theme.
+
+### Fixed
+
+* **Editing one panel discarded the changes of another one.** Every form wrote into
+  the configuration it had been built with instead of the current one, so setting a
+  colour and afterwards changing, say, the card height could silently drop the
+  colour again. All fields write into the live configuration now.
+
+### Changed
+
+* The test harness grew from 186 to 219 checks: the picker, the CSS value path, the
+  picker fallback for values it cannot display, the clear button and the cross panel
+  behaviour are covered, plus the new labels in all five languages.
+
 ## [2.0.0-beta.2] - 2026-09-19
 
 The visual editor now reaches every option of the card, so no feature needs YAML

@@ -25,6 +25,7 @@ import {
     numberOr,
     setPath,
 } from "./lib-config.js";
+import { COLOR_FIELD_TYPE } from "./color-field.js";
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -141,6 +142,19 @@ const decimalsSelector = () =>
 
 const text = (multiline) => (multiline ? { text: { multiline: true } } : { text: {} });
 const boolean = () => ({ boolean: {} });
+
+/**
+ * A colour option. `kind` moves the field out of `ha-form`, because a colour is
+ * much easier to set with the graphical picker and `ha-form` has none. The
+ * selector stays a text one, so the descriptor keeps working everywhere else.
+ */
+const color = (key, path) => ({
+    key,
+    kind: "color",
+    selector: text(),
+    read: (config) => read(config, path),
+    write: (config, value) => write(config, path, value),
+});
 
 /** Line shape per connection: inherit the card setting, or force one. */
 const curveSelector = () =>
@@ -274,30 +288,10 @@ function cardSectionDescriptors(sectionId) {
                     read: (config) => getPath(config, "background.preset", "theme"),
                     write: (config, value) => write(config, "background.preset", value),
                 },
-                {
-                    key: "background_color",
-                    selector: text(),
-                    read: (config) => read(config, "background.color"),
-                    write: (config, value) => write(config, "background.color", value),
-                },
-                {
-                    key: "background_color_light",
-                    selector: text(),
-                    read: (config) => read(config, "background.color_light"),
-                    write: (config, value) => write(config, "background.color_light", value),
-                },
-                {
-                    key: "background_from",
-                    selector: text(),
-                    read: (config) => read(config, "background.from"),
-                    write: (config, value) => write(config, "background.from", value),
-                },
-                {
-                    key: "background_to",
-                    selector: text(),
-                    read: (config) => read(config, "background.to"),
-                    write: (config, value) => write(config, "background.to", value),
-                },
+                color("background_color", "background.color"),
+                color("background_color_light", "background.color_light"),
+                color("background_from", "background.from"),
+                color("background_to", "background.to"),
                 {
                     key: "background_angle",
                     selector: numberBox(0, 360, 5, "°"),
@@ -351,12 +345,7 @@ function cardSectionDescriptors(sectionId) {
                     read: (config) => getPath(config, "colors.mode", "theme"),
                     write: (config, value) => write(config, "colors.mode", value),
                 },
-                ...COLOR_SLOTS.map((slot) => ({
-                    key: `color_${slot}`,
-                    selector: text(),
-                    read: (config) => read(config, `colors.${slot}`),
-                    write: (config, value) => write(config, `colors.${slot}`, value),
-                })),
+                ...COLOR_SLOTS.map((slot) => color(`color_${slot}`, `colors.${slot}`)),
             ];
 
         case "numbers":
@@ -830,26 +819,79 @@ function expansionPanel(id, titleKey, icon, content) {
     return panel;
 }
 
-function createForm(editor, descriptors, config, onChange, extraClass) {
-    const form = document.createElement("ha-form");
-    if (extraClass) form.className = extraClass;
-    form.hass = editor._hass;
-    form.data = formData(config, descriptors);
-    form.schema = buildSchema(descriptors);
-    form.computeLabel = (schema) => {
-        const key = labelKey(schema.name);
-        // `t` returns a visible marker for a missing key, so a forgotten
-        // translation shows up in the UI and in the tests instead of silently
-        // falling back to the schema name.
-        return localize("fields", key, t("fields", key));
-    };
-    form.computeHelper = (schema) =>
-        localize("helpers", labelKey(schema.name), "") || undefined;
-    form.addEventListener("value-changed", (event) => {
-        event.stopPropagation();
-        onChange(applyFormData(config, descriptors, event.detail.value));
+/**
+ * Renders the colour options of a section. They get their own fields, because
+ * `ha-form` has no graphical picker and picking a colour by hand is tedious.
+ */
+function colorFields(editor, descriptors, config, onChange) {
+    const grid = document.createElement("div");
+    grid.className = "color-grid";
+
+    descriptors.forEach((descriptor) => {
+        const key = labelKey(descriptor.key);
+        const field = document.createElement(COLOR_FIELD_TYPE);
+        field.setAttribute("data-key", descriptor.key);
+        field.label = localize("fields", key, t("fields", key));
+        // A slot specific hint wins, otherwise the generic explanation.
+        field.helper =
+            localize("helpers", key, "") || localize("helpers", "color_value", "");
+        field.clearLabel = t("actions", "clear_color");
+        field.value = descriptor.read(config);
+        field.addEventListener("value-changed", (event) => {
+            event.stopPropagation();
+            onChange(
+                applyFormData(editor._config, [descriptor], {
+                    [descriptor.key]: event.detail.value,
+                })
+            );
+        });
+        grid.appendChild(field);
     });
-    return form;
+
+    return grid;
+}
+
+/**
+ * Builds the fields of one panel: a `ha-form` for everything and the colour
+ * pickers for the colour options.
+ */
+function createForm(editor, descriptors, config, onChange, extraClass) {
+    const colors = descriptors.filter((descriptor) => descriptor.kind === "color");
+    const rest = descriptors.filter((descriptor) => descriptor.kind !== "color");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "field-set";
+
+    if (colors.length > 0) {
+        wrapper.appendChild(colorFields(editor, colors, config, onChange));
+    }
+
+    if (rest.length > 0) {
+        const form = document.createElement("ha-form");
+        if (extraClass) form.className = extraClass;
+        form.hass = editor._hass;
+        form.data = formData(config, rest);
+        form.schema = buildSchema(rest);
+        form.computeLabel = (schema) => {
+            const key = labelKey(schema.name);
+            // `t` returns a visible marker for a missing key, so a forgotten
+            // translation shows up in the UI and in the tests instead of silently
+            // falling back to the schema name.
+            return localize("fields", key, t("fields", key));
+        };
+        form.computeHelper = (schema) =>
+            localize("helpers", labelKey(schema.name), "") || undefined;
+        form.addEventListener("value-changed", (event) => {
+            event.stopPropagation();
+            // Always write into the configuration the editor holds right now:
+            // the one of the moment this field was built is only a snapshot, and
+            // writing into it would silently drop what other panels changed.
+            onChange(applyFormData(editor._config, rest, event.detail.value));
+        });
+        wrapper.appendChild(form);
+    }
+
+    return wrapper;
 }
 
 /** Renders the "Card" tab: one expansion panel per configuration section. */
