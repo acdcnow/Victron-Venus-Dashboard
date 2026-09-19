@@ -4,10 +4,10 @@ A custom [Home Assistant](https://www.home-assistant.io/) card that reproduces t
 Victron Venus GUI v2 overview: one box per device, connected by lines whose flow
 follows your power values.
 
-**Current pre-release: `2.0.0-beta.2`** — a rework for Home Assistant 2026.9 with
+**Current pre-release: `2.0.0-beta.3`** — a rework for Home Assistant 2026.9 with
 decimal places per entity, a controllable flow direction and fully customizable
-backgrounds and colours. Every option of the card is available in the visual
-editor, so no YAML is needed for any feature.
+backgrounds and colours, with a graphical colour picker. Every option of the card
+is available in the visual editor, so no YAML is needed for any feature.
 
 ---
 
@@ -15,13 +15,14 @@ editor, so no YAML is needed for any feature.
 
 | Version | Home Assistant | Where to get it | Status |
 | --- | --- | --- | --- |
-| **2.0.0-beta.2** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.2`, branch `HA2026_09_dev` | Pre-release, documented on this page |
-| 2.0.0-beta.1 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.1` | Superseded by `2.0.0-beta.2` |
+| **2.0.0-beta.3** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.3`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| 2.0.0-beta.2 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.2` | Superseded by `2.0.0-beta.3` |
+| 2.0.0-beta.1 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.1` | Superseded by `2.0.0-beta.3` |
 | 1.17.0 | 2026.1 and newer | Default branch, release `1.17.0` | Stable, see the [1.17.0 README](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/1.17.0/README.md) |
 
 > **The default branch still contains the 1.17.0 code.** Everything documented
 > below describes the 2.0 pre-release. To install it, add the repository in HACS
-> and enable pre-release versions, then download `2.0.0-beta.2`. Stay on `1.17.0`
+> and enable pre-release versions, then download `2.0.0-beta.3`. Stay on `1.17.0`
 > if you do not want a pre-release.
 
 The card itself renders on older Home Assistant versions as well, because every
@@ -48,9 +49,10 @@ instance.
 * 🔀 **Flow direction control** — per connection: automatic, forward, reverse,
   both directions or no indicator at all, plus a line shape per connection.
 * 🎨 **Background presets** — theme, transparent, solid colour, gradient, image or
-  custom CSS, with light and dark variants.
+  custom CSS, with light and dark variants and a colour picker for every colour.
 * 🌈 **Customizable colours** — Home Assistant theme, the classic Victron palette
-  or your own colours for eleven colour slots.
+  or your own colours for eleven colour slots, each with a picker and a free text
+  field for CSS values.
 * 🛠 **Everything else** — fonts, spacing, line width, indicator size, opacity,
   gauge, sparkline window, and raw CSS as the last resort.
 * 🚀 **Zero dependencies** — no additional cards or libraries, no build step.
@@ -71,7 +73,7 @@ instance.
 4. Add `https://github.com/acdcnow/Victron-Venus-Dashboard` and select **Lovelace**.
 5. Search for "Victron Venus Dashboard" and click **Download**.
    * For the 2.0 pre-release, first enable beta versions for this repository, then
-     pick `2.0.0-beta.2`.
+     pick `2.0.0-beta.3`.
 6. Reload your browser.
 
 HACS downloads the whole `dist` folder, so updating through HACS is always
@@ -98,8 +100,8 @@ itself and one tab per column.
 | Section | What it configures |
 | --- | --- |
 | Layout | Theme, preview mode, number of devices per column, card height, corner radius, spacing |
-| Background | Preset, colours, gradient, image, opacity, whether it covers the whole card and custom CSS |
-| Colors | Home Assistant theme, the classic Victron palette or your own colours |
+| Background | Preset, the four background colours with pickers, gradient, image, opacity, whether it covers the whole card and custom CSS |
+| Colors | Home Assistant theme, the classic Victron palette or your own colours for eleven slots, each with a picker |
 | Number formatting | Decimal places, Home Assistant display precision, trailing zeros, number only filter and the text for missing entities |
 | Connection lines | Flow direction, line shape, animation, speed, width, indicator size and opacity |
 | Fonts | Font sizes and weights per zone, font family, unit size |
@@ -224,6 +226,13 @@ colors:
 * `custom` starts from the theme and applies your own colours.
 * Every colour accepts `#rrggbb`, `rgb()`, `hsl()`, a colour name or a CSS
   variable such as `var(--accent-color)`.
+
+In the editor every colour option has a picker: the swatch opens the picker of your
+browser and stores a plain `#rrggbb` value, while the text field next to it keeps
+accepting any CSS colour. That way a colour can be picked by eye and a theme
+variable can still be typed. A value the picker cannot display (a variable, for
+example) is marked with a dashed border instead of being replaced, and the button
+to the right of the text field clears the option so the theme value applies again.
 
 The card also exposes its own custom properties, so a theme or another card can
 restyle it without touching the configuration:
