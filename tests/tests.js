@@ -7,18 +7,29 @@
  * customisation output. No Home Assistant instance is required.
  */
 
-import {
+import { defineStubs, mockHass, standardStates, state } from "./mock-hass.js";
+
+/*
+ * Every module is loaded with the same version query the card uses, so the tests
+ * and the card share one instance of each module - they keep live state such as
+ * the link maps, and a second copy would make the tests meaningless. The version
+ * itself comes from a plain import of `lib-config.js`, which is stateless.
+ */
+const VERSION = (await import("../dist/lib-config.js")).VERSION;
+const versionQuery = `?v=${VERSION}`;
+const module = (name) => import(`../dist/${name}${versionQuery}`);
+
+const {
     buildStyleVariables,
     formatEntityState,
     getStubConfig,
     normalizeConfig,
     resolveDecimals,
-} from "../dist/lib-config.js";
-import * as libVenus from "../dist/lib-venus.js";
-import { defineStubs, mockHass, standardStates, state } from "./mock-hass.js";
+} = await module("lib-config.js");
+const libVenus = await module("lib-venus.js");
 
 // Registers the `venus-os-dashboard` and `venus-os-editor` custom elements.
-await import("../dist/Victron-Venus-Dashboard.js");
+await module("Victron-Venus-Dashboard.js");
 
 const results = [];
 
@@ -680,7 +691,7 @@ function testLineShape() {
  * ------------------------------------------------------------------ */
 
 async function testEditor() {
-    const { default: EditorElement } = await import("../dist/editor.js");
+    const { default: EditorElement } = await module("editor.js");
     void EditorElement;
 
     const config = {
@@ -1098,7 +1109,7 @@ async function testEditorCoverage() {
         buildSchema,
         pruneConfig,
         setAnchorProvider,
-    } = await import("../dist/lib-editor.js");
+    } = await module("lib-editor.js");
 
     // The connection dropdowns need an anchor list; the schema only is used here.
     setAnchorProvider((boxKey, self) => [
@@ -1402,7 +1413,7 @@ async function testEditorCoverage() {
  * ------------------------------------------------------------------ */
 
 async function testColorField() {
-    const { toHexColor } = await import("../dist/color-field.js");
+    const { toHexColor } = await module("color-field.js");
 
     equal("colour: six digit hex is kept", toHexColor("#AABBCC"), "#aabbcc");
     equal("colour: three digit hex is expanded", toHexColor("#abc"), "#aabbcc");
@@ -1467,6 +1478,48 @@ async function testColorField() {
 }
 
 /* ------------------------------------------------------------------ *
+ * 10. Robustness against duplicate or stale module copies
+ * ------------------------------------------------------------------ */
+
+/**
+ * Browsers cache every ES module under its own URL, so a manually installed copy
+ * next to the HACS one - or an older cached file - can be evaluated in addition to
+ * the current one. That must not throw and must not replace the elements that are
+ * already registered, otherwise the whole card stops working.
+ */
+async function testRobustness() {
+    const card = customElements.get("venus-os-dashboard");
+    const editor = customElements.get("venus-os-editor");
+    check("robustness: the card element is registered", Boolean(card));
+    check("robustness: the editor element is registered", Boolean(editor));
+
+    let failure = "";
+    try {
+        // A different query string makes the browser evaluate a second copy.
+        await import("../dist/editor.js?v=stale");
+        await import("../dist/Victron-Venus-Dashboard.js?v=stale");
+    } catch (error) {
+        failure = error.message;
+    }
+    equal("robustness: a second module copy does not throw", failure, "");
+    equal(
+        "robustness: the card element is not replaced",
+        customElements.get("venus-os-dashboard"),
+        card
+    );
+    equal(
+        "robustness: the editor element is not replaced",
+        customElements.get("venus-os-editor"),
+        editor
+    );
+    equal(
+        "robustness: the card is offered once in the card picker",
+        window.customCards.filter((entry) => entry.type === "venus-os-dashboard").length,
+        1
+    );
+}
+
+/* ------------------------------------------------------------------ *
  * Runner
  * ------------------------------------------------------------------ */
 
@@ -1477,6 +1530,7 @@ async function run() {
     testDecimals();
     testStyleVariables();
     testCard();
+    testRobustness();
     await testFlowDirection();
     testLineShape();
     await testEditor();

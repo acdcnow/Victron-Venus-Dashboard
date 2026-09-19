@@ -11,7 +11,7 @@
  * configuration object created by `normalizeConfig()`.
  */
 
-export const VERSION = "2.0.0-beta.3";
+export const VERSION = "2.0.0-beta.4";
 
 export const CARD_TYPE = "venus-os-dashboard";
 export const EDITOR_TYPE = "venus-os-editor";

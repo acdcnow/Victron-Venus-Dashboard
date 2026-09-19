@@ -10,16 +10,16 @@
  * from the card configuration.
  */
 
-import "./editor.js";
-import * as libVenus from "./lib-venus.js";
+import "./editor.js?v=2.0.0-beta.4";
+import * as libVenus from "./lib-venus.js?v=2.0.0-beta.4";
 import {
     CARD_TYPE,
     VERSION,
     buildStyleVariables,
     getStubConfig,
     resolveIsDark,
-} from "./lib-config.js";
-import { cssData } from "./css-common.js";
+} from "./lib-config.js?v=2.0.0-beta.4";
+import { cssData } from "./css-common.js?v=2.0.0-beta.4";
 
 console.info(
     `%c 🗲 %c - %cVictron Venus Dashboard%c - %c 🗲 \n%c version ${VERSION}`,
@@ -82,6 +82,24 @@ class VenusOsDashboardCard extends HTMLElement {
 
         const container = this.shadowRoot.querySelector("#container");
         container.innerHTML = "";
+
+        // The files of this card are ES modules that keep their name across
+        // versions, so a browser cache can serve an old module next to a new one.
+        // Saying so is a lot more useful than "is not a function".
+        if (typeof libVenus.renderDashboard !== "function") {
+            this._venus = undefined;
+            this._taskStarted = false;
+            this._showError(
+                "Venus dashboard: the card files are out of date. Reload the page with a cleared cache (Ctrl+Shift+R) or download the card again in HACS."
+            );
+            console.error(
+                `Venus dashboard ${VERSION}: lib-venus.js does not export renderDashboard, the browser is serving a cached copy of the file.`,
+                libVenus
+            );
+            this._applyTheme();
+            this._applyCustomCss();
+            return;
+        }
 
         try {
             this._venus = libVenus.renderDashboard(this._config, container, this._hass);
@@ -184,15 +202,21 @@ class VenusOsDashboardCard extends HTMLElement {
     }
 }
 
-customElements.define(CARD_TYPE, VenusOsDashboardCard);
+// The card must survive being evaluated twice: with a manual installation next to
+// a HACS installation, or when an old cached copy of a module is still around.
+if (!customElements.get(CARD_TYPE)) {
+    customElements.define(CARD_TYPE, VenusOsDashboardCard);
+}
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-    type: CARD_TYPE,
-    name: "Victron Venus Dashboard",
-    preview: true,
-    description: "A dashboard that looks like the Victron Venus GUI v2.",
-    documentationURL: "https://github.com/acdcnow/Victron-Venus-Dashboard",
-});
+if (!window.customCards.some((card) => card.type === CARD_TYPE)) {
+    window.customCards.push({
+        type: CARD_TYPE,
+        name: "Victron Venus Dashboard",
+        preview: true,
+        description: "A dashboard that looks like the Victron Venus GUI v2.",
+        documentationURL: "https://github.com/acdcnow/Victron-Venus-Dashboard",
+    });
+}
 
 export default VenusOsDashboardCard;

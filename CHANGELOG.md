@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [semantic versioning](https://semver.org/).
 
+## [2.0.0-beta.4] - 2026-09-19
+
+Updated modules can no longer be mixed with cached ones, and a duplicate copy of a
+module no longer breaks the card.
+
+> This is a pre-release and is not merged into `main` yet. Enable beta versions for
+> this repository in HACS to install it.
+
+### Fixed
+
+* **`libVenus.renderDashboard is not a function` after an update.** The card is a
+  set of ES modules and a browser caches every file under its own URL. HACS only
+  adds its cache busting parameter to the file Home Assistant loads, so the browser
+  kept serving the previous `lib-venus.js` next to the new card. Every internal
+  import now carries the version (`./lib-venus.js?v=2.0.0-beta.4`), so an update
+  loads a complete set of matching files. The static checks fail when an import is
+  added without the version, so this cannot come back unnoticed.
+* **`the name "venus-os-editor" has already been used with this registry`.**
+  Registering a custom element twice throws and took the card with it when the
+  browser evaluated a second copy of a module (a manual installation next to the
+  HACS one, for example). Both elements are registered only when they are still
+  unknown, and the card is offered once in the card picker.
+
+### Changed
+
+* A stale module now shows what to do ("the card files are out of date, reload with
+  a cleared cache or download the card again") instead of a bare
+  `is not a function` error.
+* The test harness loads its modules through the same versioned URLs the card uses,
+  and checks that a second copy of a module neither throws nor replaces the already
+  registered elements.
+
 ## [2.0.0-beta.3] - 2026-09-19
 
 A graphical colour picker for every colour option, plus a bug that silently

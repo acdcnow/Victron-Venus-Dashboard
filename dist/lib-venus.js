@@ -18,7 +18,7 @@ import {
     numberOr,
     resolveDecimals,
     resolveIsDark,
-} from "./lib-config.js";
+} from "./lib-config.js?v=2.0.0-beta.4";
 
 /** Live link animation controls, keyed by `<box>_<start>-><end>`. */
 export const pathControls = new Map();

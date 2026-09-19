@@ -5,15 +5,15 @@
  * The heavy lifting (schemas, descriptors, rendering) lives in `lib-editor.js`.
  */
 
-import { EDITOR_TYPE, normalizeConfig } from "./lib-config.js";
-import { css } from "./css-editor.js";
+import { EDITOR_TYPE, normalizeConfig } from "./lib-config.js?v=2.0.0-beta.4";
+import { css } from "./css-editor.js?v=2.0.0-beta.4";
 import {
     loadTranslations,
     pruneConfig,
     renderCardTab,
     renderColumnTab,
     t,
-} from "./lib-editor.js";
+} from "./lib-editor.js?v=2.0.0-beta.4";
 
 /** Structural comparison, used to ignore the echo of our own changes. */
 function isEqual(a, b) {
@@ -162,6 +162,12 @@ class VenusOsDashboardEditor extends HTMLElement {
     }
 }
 
-customElements.define(EDITOR_TYPE, VenusOsDashboardEditor);
+// The card loads this module as well, so the element can already be defined when
+// the browser evaluates it a second time (a manually installed copy next to the
+// HACS one, for example). Defining it again would throw a DOMException and take
+// the whole card down with it.
+if (!customElements.get(EDITOR_TYPE)) {
+    customElements.define(EDITOR_TYPE, VenusOsDashboardEditor);
+}
 
 export default VenusOsDashboardEditor;

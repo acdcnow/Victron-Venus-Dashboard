@@ -108,16 +108,61 @@ def check_deprecations() -> None:
                 fail(f"{path.name}:{line} uses {label}: {match.group(0)!r}")
 
 
+def current_version() -> str:
+    """The version from `dist/lib-config.js`, the single source of truth."""
+    match = re.search(
+        r'VERSION\s*=\s*"([^"]+)"', (DIST / "lib-config.js").read_text(encoding="utf-8")
+    )
+    return match.group(1) if match else ""
+
+
+def _check_specifier(path: pathlib.Path, specifier: str, version: str) -> None:
+    """One internal import: the file has to exist and carry the current version."""
+    target, _, query = specifier.partition("?")
+    name = target.replace("${language}", "en")
+    if not (DIST / name).exists():
+        fail(f"{path.name} imports missing module {target}")
+        return
+
+    if query == f"v={version}":
+        return
+    if query == "v=${VERSION}":
+        if not re.search(r"import\s*\{[^}]*\bVERSION\b", path.read_text(encoding="utf-8")):
+            fail(f"{path.name} uses ${{VERSION}} in an import without importing VERSION")
+        return
+
+    fail(
+        f"{path.name} imports {target} with {query!r}, expected '?v={version}': "
+        "a browser cache would keep serving the old file after an update"
+    )
+
+
 def check_imports() -> None:
+    """The card is a set of ES modules and a browser caches every file under its
+    own URL. Internal imports therefore have to carry the version, otherwise an
+    update can load a new entry module next to an old sub module (which is how
+    "renderDashboard is not a function" happens)."""
+    version = current_version()
     for path in sorted(DIST.glob("*.js")):
         text = path.read_text(encoding="utf-8")
         for target in re.findall(r"from\s+['\"]\./([^'\"]+)['\"]", text):
-            if not (DIST / target).exists():
-                fail(f"{path.name} imports missing module {target}")
+            _check_specifier(path, target, version)
         for target in re.findall(r"import\(\s*[`'\"]\./([^`'\"]+)", text):
-            name = target.split("${")[0]
-            if name.endswith(".js") and not (DIST / name).exists():
-                fail(f"{path.name} dynamically imports missing module {name}")
+            _check_specifier(path, target, version)
+
+    # The tests have to load the same URLs as the card, otherwise they work on a
+    # second copy of every module and no longer test what the card runs.
+    for path in sorted((ROOT / "tests").glob("*.js")):
+        text = path.read_text(encoding="utf-8")
+        for target in re.findall(r"['\"]\.\./dist/([^'\"`]+)", text):
+            if "?v=" in target or target.endswith("${versionQuery}"):
+                continue
+            # `tests.js` reads the version from `lib-config.js` to build the query
+            # in the first place; that module is stateless, so a second instance is
+            # harmless.
+            if path.name == "tests.js" and target == "lib-config.js":
+                continue
+            fail(f"{path.name} imports ../dist/{target} without the version query")
 
 
 def check_manifest() -> None:
@@ -141,18 +186,16 @@ def check_manifest() -> None:
 
 
 def check_version() -> None:
-    version = re.search(
-        r'VERSION\s*=\s*"([^"]+)"', (DIST / "lib-config.js").read_text(encoding="utf-8")
-    )
+    version = current_version()
     if not version:
         fail("dist/lib-config.js does not export a version")
         return
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    if f"## {version.group(1)}" not in changelog and f"[{version.group(1)}]" not in changelog:
-        fail(f"CHANGELOG.md has no entry for version {version.group(1)}")
+    if f"## {version}" not in changelog and f"[{version}]" not in changelog:
+        fail(f"CHANGELOG.md has no entry for version {version}")
     page = (ROOT / "README.md").read_text(encoding="utf-8")
-    if version.group(1) not in page:
-        fail(f"README.md does not mention version {version.group(1)}")
+    if version not in page:
+        fail(f"README.md does not mention version {version}")
 
 
 def main() -> int:

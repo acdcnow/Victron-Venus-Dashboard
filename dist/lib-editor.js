@@ -15,6 +15,7 @@ import {
     LINK_CURVES,
     LINK_DIRECTIONS,
     THEMES,
+    VERSION,
     anchorsToString,
     boolOr,
     clamp,
@@ -24,8 +25,8 @@ import {
     normalizeConfig,
     numberOr,
     setPath,
-} from "./lib-config.js";
-import { COLOR_FIELD_TYPE } from "./color-field.js";
+} from "./lib-config.js?v=2.0.0-beta.4";
+import { COLOR_FIELD_TYPE } from "./color-field.js?v=2.0.0-beta.4";
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -41,11 +42,11 @@ export async function loadTranslations(hass, force = false) {
     }
     currentLanguage = language;
     try {
-        const module = await import(`./lang-${language}.js`);
+        const module = await import(`./lang-${language}.js?v=${VERSION}`);
         translations = module.default;
     } catch (error) {
         console.warn(`Victron Venus dashboard: no translation for "${language}".`, error);
-        const fallback = await import("./lang-en.js");
+        const fallback = await import(`./lang-en.js?v=${VERSION}`);
         translations = fallback.default;
     }
     return translations;
