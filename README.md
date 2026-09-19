@@ -4,7 +4,7 @@ A custom [Home Assistant](https://www.home-assistant.io/) card that reproduces t
 Victron Venus GUI v2 overview: one box per device, connected by lines whose flow
 follows your power values.
 
-**Current pre-release: `2.0.0-beta.3`** — a rework for Home Assistant 2026.9 with
+**Current pre-release: `2.0.0-beta.4`** — a rework for Home Assistant 2026.9 with
 decimal places per entity, a controllable flow direction and fully customizable
 backgrounds and colours, with a graphical colour picker. Every option of the card
 is available in the visual editor, so no YAML is needed for any feature.
@@ -15,14 +15,15 @@ is available in the visual editor, so no YAML is needed for any feature.
 
 | Version | Home Assistant | Where to get it | Status |
 | --- | --- | --- | --- |
-| **2.0.0-beta.3** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.3`, branch `HA2026_09_dev` | Pre-release, documented on this page |
-| 2.0.0-beta.2 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.2` | Superseded by `2.0.0-beta.3` |
-| 2.0.0-beta.1 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.1` | Superseded by `2.0.0-beta.3` |
+| **2.0.0-beta.4** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.4`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| 2.0.0-beta.3 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.3` | Superseded by `2.0.0-beta.4` |
+| 2.0.0-beta.2 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.2` | Superseded by `2.0.0-beta.4` |
+| 2.0.0-beta.1 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.1` | Superseded by `2.0.0-beta.4` |
 | 1.17.0 | 2026.1 and newer | Default branch, release `1.17.0` | Stable, see the [1.17.0 README](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/1.17.0/README.md) |
 
 > **The default branch still contains the 1.17.0 code.** Everything documented
 > below describes the 2.0 pre-release. To install it, add the repository in HACS
-> and enable pre-release versions, then download `2.0.0-beta.3`. Stay on `1.17.0`
+> and enable pre-release versions, then download `2.0.0-beta.4`. Stay on `1.17.0`
 > if you do not want a pre-release.
 
 The card itself renders on older Home Assistant versions as well, because every
@@ -73,7 +74,7 @@ instance.
 4. Add `https://github.com/acdcnow/Victron-Venus-Dashboard` and select **Lovelace**.
 5. Search for "Victron Venus Dashboard" and click **Download**.
    * For the 2.0 pre-release, first enable beta versions for this repository, then
-     pick `2.0.0-beta.3`.
+     pick `2.0.0-beta.4`.
 6. Reload your browser.
 
 HACS downloads the whole `dist` folder, so updating through HACS is always
@@ -349,9 +350,41 @@ python -m http.server 8765      # then open /tests/harness.html
 ```
 
 The browser harness stubs the Home Assistant frontend components, renders the card
-and the editor in a real browser and checks the configuration migration, the
-decimal handling, the flow direction, the generated style variables and the editor
-round trip (152 checks).
+and the editor in a real browser and checks the configuration migration, the decimal
+handling, the flow direction, the line shapes, the colour pickers, the generated
+style variables, the editor round trip and that every option of the card is
+reachable in the editor (219 checks).
+
+---
+
+## Troubleshooting
+
+### `libVenus.renderDashboard is not a function`
+
+The card is a set of ES modules and a browser caches every file under its own URL.
+HACS only adds its cache busting parameter to the file Home Assistant loads, so
+after an update the browser could serve a new card file next to a cached old
+`lib-venus.js`. That message means exactly that: the card files are mixed.
+
+Since `2.0.0-beta.4` every internal import carries the version, so an update always
+loads a matching set of files and the problem cannot come back. If you see it on an
+older version:
+
+1. Reload the page with a cleared cache (`Ctrl+Shift+R`, on Safari `Cmd+Shift+R`).
+2. If it stays, download the card again in HACS (or copy the whole `dist` folder
+   again) and reload.
+3. Make sure the card is installed only once. A manual copy in
+   `config/www/venus-os-dashboard/` next to a HACS installation means two copies of
+   the same modules, and only one of them gets updated.
+
+From `2.0.0-beta.4` on a stale module shows a message telling you to clear the cache
+instead of the bare JavaScript error.
+
+### `the name "venus-os-editor" has already been used with this registry`
+
+Two copies of a module were evaluated, normally because the card is installed twice
+(see above). The custom elements are registered only when they are still unknown
+now, so the message does not appear any more and the card keeps working.
 
 ---
 
