@@ -9,6 +9,7 @@ import { EDITOR_TYPE, normalizeConfig } from "./lib-config.js";
 import { css } from "./css-editor.js";
 import {
     loadTranslations,
+    pruneConfig,
     renderCardTab,
     renderColumnTab,
     t,
@@ -96,13 +97,15 @@ class VenusOsDashboardEditor extends HTMLElement {
 
     /** Applies a new configuration and tells Home Assistant about it. */
     _commit(config, rerender = false) {
-        this._config = config;
-        this._selfApplied = config;
-        this.columns = normalizeConfig(config).layout.columns;
+        // Boxes and connections whose fields were all cleared are dropped, so
+        // the same editor can both add and remove them.
+        this._config = pruneConfig(config);
+        this._selfApplied = this._config;
+        this.columns = normalizeConfig(this._config).layout.columns;
 
         this.dispatchEvent(
             new CustomEvent("config-changed", {
-                detail: { config },
+                detail: { config: this._config },
                 bubbles: true,
                 composed: true,
             })

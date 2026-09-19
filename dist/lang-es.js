@@ -25,6 +25,7 @@ export default {
   },
   fields: {
     theme: "Tema",
+    demo: "Vista previa sin entidades",
     columns_1: "Dispositivos en la columna 1",
     columns_2: "Dispositivos en la columna 2",
     columns_3: "Dispositivos en la columna 3",
@@ -58,7 +59,7 @@ export default {
     color_gauge: "Indicador",
     numbers_decimals: "Decimales para todas las entidades",
     numbers_auto: "Usar la precisión de Home Assistant",
-    numbers_numeric_only: "Formatear solo números",
+    numbers_main_only: "Formatear solo números",
     numbers_trim: "Quitar ceros finales",
     numbers_missing: "Texto para entidades ausentes",
     links_direction: "Dirección del flujo",
@@ -78,6 +79,7 @@ export default {
     unit_scale: "Tamaño de la unidad",
     graphs_hours: "Periodo del historial",
     graphs_refresh: "Intervalo de actualización",
+    graphs_segments: "Detalle de la gráfica de historial",
     custom_css: "CSS propio de la tarjeta",
     icon: "Icono",
     name: "Nombre",
@@ -95,9 +97,11 @@ export default {
     link_start: "Anclaje inicial",
     link_end: "Anclaje final",
     link_entity: "Entidad para la dirección del flujo",
-    link_direction: "Dirección del flujo"
+    link_direction: "Dirección del flujo",
+    link_curve: "Forma de la línea"
   },
   helpers: {
+    demo: "Mantiene las cajas y sus títulos, pero deja vacíos todos los valores. Útil mientras diseñas la disposición.",
     aspect: "Altura de la tarjeta, en porcentaje de su anchura.",
     padding: "Abreviatura CSS, por ejemplo 25px 20px 15px 20px.",
     background_preset: "Tema sigue el tema de Home Assistant, Transparente muestra la página detrás de la tarjeta.",
@@ -108,7 +112,7 @@ export default {
     color_dashboard: "Acepta #rrggbb, rgb(), un nombre de color o una variable CSS. Vacío usa el valor del tema.",
     numbers_decimals: "Vacío muestra el valor tal como lo informa Home Assistant.",
     numbers_auto: "Usa la precisión que configuraste para la entidad en Home Assistant.",
-    numbers_numeric_only: "Deja sin cambios estados como on, off, unknown o unavailable.",
+    numbers_main_only: "Deja sin cambios estados como on, off, unknown o unavailable.",
     numbers_trim: "Convierte 12.50 en 12.5.",
     numbers_missing: "Se muestra cuando la entidad seleccionada no existe.",
     links_direction: "Automática sigue el signo de la entidad enlazada: positivo va del inicio al final.",
@@ -116,6 +120,9 @@ export default {
     links_curve: "Recta dibuja una línea directa, Automática rodea las cajas.",
     graphs_hours: "Cuánto historial muestra la curva.",
     graphs_refresh: "Cada cuánto se vuelve a cargar el historial.",
+    graphs_segments: "Los valores altos conservan más picos cuando se reduce el historial.",
+    link_curve: "Anula la forma de línea de toda la tarjeta para esta conexión.",
+    link_direction: "Anula la dirección del flujo de toda la tarjeta para esta conexión.",
     custom_css: "Se aplica al elemento de la tarjeta, por ejemplo box-shadow o border.",
     font_header: "Acepta auto, un valor en píxeles como 14px o cualquier longitud CSS.",
     anchor_left: "Número de puntos de conexión en este lado de la caja.",
@@ -142,7 +149,8 @@ export default {
     direction_both: "Ambas direcciones",
     direction_off: "Sin indicador",
     curve_auto: "Automática",
-    curve_straight: "Recta"
+    curve_straight: "Recta",
+    curve_inherit: "Ajuste de la tarjeta"
   },
   actions: {
     add_link: "Añadir conexión",
@@ -150,6 +158,6 @@ export default {
   },
   messages: {
     no_links: "Todavía no hay conexiones configuradas.",
-    device_missing: "Esta caja no forma parte del diseño de columnas actual."
+    device_empty: "Esta caja aún no tiene ajustes. Rellena los campos siguientes para añadirla."
   }
 };

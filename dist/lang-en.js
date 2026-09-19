@@ -25,6 +25,7 @@ export default {
   },
   fields: {
     theme: "Theme",
+    demo: "Preview without entities",
     columns_1: "Devices in column 1",
     columns_2: "Devices in column 2",
     columns_3: "Devices in column 3",
@@ -58,7 +59,7 @@ export default {
     color_gauge: "Gauge",
     numbers_decimals: "Decimal places for all entities",
     numbers_auto: "Use the Home Assistant display precision",
-    numbers_numeric_only: "Format numbers only",
+    numbers_main_only: "Format numbers only",
     numbers_trim: "Remove trailing zeros",
     numbers_missing: "Text for missing entities",
     links_direction: "Flow direction",
@@ -78,6 +79,7 @@ export default {
     unit_scale: "Unit size",
     graphs_hours: "History window",
     graphs_refresh: "Refresh interval",
+    graphs_segments: "Detail of the history graph",
     custom_css: "Custom CSS for the card",
     icon: "Icon",
     name: "Name",
@@ -95,9 +97,11 @@ export default {
     link_start: "Start anchor",
     link_end: "End anchor",
     link_entity: "Entity for the flow direction",
-    link_direction: "Flow direction"
+    link_direction: "Flow direction",
+    link_curve: "Line shape"
   },
   helpers: {
+    demo: "Keeps the boxes and their titles, but leaves every value empty. Useful while designing a layout.",
     aspect: "Height of the card, in percent of its width.",
     padding: "CSS shorthand, for example 25px 20px 15px 20px.",
     background_preset: "Theme follows your Home Assistant theme, none shows the page behind the card.",
@@ -108,7 +112,7 @@ export default {
     color_dashboard: "Accepts #rrggbb, rgb(), a color name or a CSS variable. Empty uses the theme value.",
     numbers_decimals: "Empty shows the value exactly as Home Assistant reports it.",
     numbers_auto: "Uses the precision you configured for the entity in Home Assistant.",
-    numbers_numeric_only: "Leaves states like on, off, unknown or unavailable unchanged.",
+    numbers_main_only: "Leaves states like on, off, unknown or unavailable unchanged.",
     numbers_trim: "Turns 12.50 into 12.5.",
     numbers_missing: "Shown when the selected entity does not exist.",
     links_direction: "Automatic follows the sign of the linked entity: positive flows from start to end.",
@@ -116,6 +120,9 @@ export default {
     links_curve: "Straight draws a direct line, automatic routes around the boxes.",
     graphs_hours: "How much history the sparkline shows.",
     graphs_refresh: "How often the history is fetched again.",
+    graphs_segments: "Higher values keep more peaks when the history is reduced.",
+    link_curve: "Overrides the line shape of the whole card for this connection.",
+    link_direction: "Overrides the flow direction of the whole card for this connection.",
     custom_css: "Applied to the card element, for example box-shadow or border.",
     font_header: "Accepts auto, a pixel value like 14px or any CSS length.",
     anchor_left: "Number of connection points on this side of the box.",
@@ -142,7 +149,8 @@ export default {
     direction_both: "Both directions",
     direction_off: "No indicator",
     curve_auto: "Automatic",
-    curve_straight: "Straight"
+    curve_straight: "Straight",
+    curve_inherit: "Card setting"
   },
   actions: {
     add_link: "Add link",
@@ -150,6 +158,6 @@ export default {
   },
   messages: {
     no_links: "No connections configured yet.",
-    device_missing: "This box is not part of the current column layout."
+    device_empty: "This box has no settings yet. Fill in the fields below to add it."
   }
 };

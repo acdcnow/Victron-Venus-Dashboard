@@ -11,7 +11,7 @@
  * configuration object created by `normalizeConfig()`.
  */
 
-export const VERSION = "2.0.0-beta.1";
+export const VERSION = "2.0.0-beta.2";
 
 export const CARD_TYPE = "venus-os-dashboard";
 export const EDITOR_TYPE = "venus-os-editor";
@@ -507,6 +507,8 @@ function normalizeDeviceLinks(raw) {
         end: isPlainString(source.end) ? source.end : "",
         entity: isPlainString(source.entity) ? source.entity : "",
         direction: normalizeLinkDirection(source),
+        // `null` means: use the line shape configured for the whole card.
+        curve: oneOf(source.curve, LINK_CURVES, null),
       };
     })
     .filter((link) => link.start !== "" && link.end !== "");

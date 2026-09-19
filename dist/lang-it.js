@@ -25,6 +25,7 @@ export default {
   },
   fields: {
     theme: "Tema",
+    demo: "Anteprima senza entità",
     columns_1: "Dispositivi nella colonna 1",
     columns_2: "Dispositivi nella colonna 2",
     columns_3: "Dispositivi nella colonna 3",
@@ -58,7 +59,7 @@ export default {
     color_gauge: "Indicatore",
     numbers_decimals: "Decimali per tutte le entità",
     numbers_auto: "Usa la precisione di Home Assistant",
-    numbers_numeric_only: "Formatta solo i numeri",
+    numbers_main_only: "Formatta solo i numeri",
     numbers_trim: "Rimuovi gli zeri finali",
     numbers_missing: "Testo per le entità mancanti",
     links_direction: "Direzione del flusso",
@@ -78,6 +79,7 @@ export default {
     unit_scale: "Dimensione dell'unità",
     graphs_hours: "Intervallo dello storico",
     graphs_refresh: "Intervallo di aggiornamento",
+    graphs_segments: "Dettaglio del grafico dello storico",
     custom_css: "CSS personalizzato della scheda",
     icon: "Icona",
     name: "Nome",
@@ -95,9 +97,11 @@ export default {
     link_start: "Ancoraggio di partenza",
     link_end: "Ancoraggio di arrivo",
     link_entity: "Entità per la direzione del flusso",
-    link_direction: "Direzione del flusso"
+    link_direction: "Direzione del flusso",
+    link_curve: "Forma della linea"
   },
   helpers: {
+    demo: "Mantiene i riquadri e i loro titoli, ma lascia vuoti tutti i valori. Utile mentre si progetta un layout.",
     aspect: "Altezza della scheda, in percentuale della sua larghezza.",
     padding: "Scorciatoia CSS, per esempio 25px 20px 15px 20px.",
     background_preset: "Tema segue il tema di Home Assistant, Trasparente mostra la pagina dietro la scheda.",
@@ -108,7 +112,7 @@ export default {
     color_dashboard: "Accetta #rrggbb, rgb(), un nome di colore o una variabile CSS. Vuoto usa il valore del tema.",
     numbers_decimals: "Vuoto mostra il valore esattamente come lo riporta Home Assistant.",
     numbers_auto: "Usa la precisione configurata per l'entità in Home Assistant.",
-    numbers_numeric_only: "Lascia invariati stati come on, off, unknown o unavailable.",
+    numbers_main_only: "Lascia invariati stati come on, off, unknown o unavailable.",
     numbers_trim: "Trasforma 12.50 in 12.5.",
     numbers_missing: "Mostrato quando l'entità selezionata non esiste.",
     links_direction: "Automatica segue il segno dell'entità collegata: positivo va dall'inizio alla fine.",
@@ -116,6 +120,9 @@ export default {
     links_curve: "Dritta traccia una linea diretta, Automatica aggira i riquadri.",
     graphs_hours: "Quanto storico mostra la curva.",
     graphs_refresh: "Ogni quanto viene ricaricato lo storico.",
+    graphs_segments: "Valori alti conservano più picchi quando lo storico viene ridotto.",
+    link_curve: "Sostituisce la forma della linea di tutta la scheda per questo collegamento.",
+    link_direction: "Sostituisce la direzione del flusso di tutta la scheda per questo collegamento.",
     custom_css: "Applicato all'elemento della scheda, per esempio box-shadow o border.",
     font_header: "Accetta auto, un valore in pixel come 14px o qualsiasi lunghezza CSS.",
     anchor_left: "Numero di punti di collegamento su questo lato del riquadro.",
@@ -142,7 +149,8 @@ export default {
     direction_both: "Entrambe le direzioni",
     direction_off: "Nessun indicatore",
     curve_auto: "Automatica",
-    curve_straight: "Dritta"
+    curve_straight: "Dritta",
+    curve_inherit: "Impostazione della scheda"
   },
   actions: {
     add_link: "Aggiungi collegamento",
@@ -150,6 +158,6 @@ export default {
   },
   messages: {
     no_links: "Non è ancora configurato alcun collegamento.",
-    device_missing: "Questo riquadro non fa parte del layout di colonne attuale."
+    device_empty: "Questo riquadro non ha ancora impostazioni. Compila i campi seguenti per aggiungerlo."
   }
 };

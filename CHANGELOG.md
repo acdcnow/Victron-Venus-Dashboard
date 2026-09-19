@@ -4,6 +4,48 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [semantic versioning](https://semver.org/).
 
+## [2.0.0-beta.2] - 2026-09-19
+
+The visual editor now reaches every option of the card, so no feature needs YAML
+anymore, plus the bugs that the audit of the editor uncovered.
+
+> This is a pre-release and is not merged into `main` yet. Enable beta versions for
+> this repository in HACS to install it.
+
+### Added
+
+* **Line shape per connection.** A connection can override `links.curve` with its
+  own `curve`: `auto` routes around the boxes, `straight` draws a direct line.
+  Leaving it out keeps using the card setting. The editor shows the field in the
+  panel of every connection. Before, the option had no effect at all, because the
+  normalized configuration dropped the key.
+* **Preview mode** (`demo`) is editable: the card keeps the boxes and their titles
+  but leaves every value empty, which is useful while designing a layout.
+* **Graph detail** (`graphs.segments`) is editable: it decides how many min/max
+  segments survive when the history is reduced for the sparkline.
+* **Boxes and connections can be added and removed in the editor.** Every box of
+  the column layout has its own tab, also when it has no settings yet: fill in a
+  field and the box appears on the card. Clear every field again and the entry is
+  removed from the configuration, so the YAML stays clean. Previously such a box
+  could only be reached by editing YAML, and there was no way to delete one.
+
+### Fixed
+
+* `background.card` could not be switched off in the editor. A missing key means
+  "on", so the off state is stored explicitly now.
+* Two editor labels were never translated and silently showed the internal schema
+  name: the number only filter (`numbers_main_only`) and the line shape of a
+  connection (`link_curve`). Both are now part of all five languages.
+* A missing translation is shown as a visible marker instead of falling back to
+  the schema name, which is what hid the two labels above.
+
+### Changed
+
+* The test harness grew from 152 to 186 checks. It now verifies that every
+  documented option is writable from the editor (and that the editor writes no
+  undocumented option), that a fully configured card can be rebuilt from the editor
+  data, and that every label resolves in all five bundled languages.
+
 ## [2.0.0-beta.1] - 2026-09-19
 
 Modernisation for Home Assistant 2026.9 with three new ways to shape the card:

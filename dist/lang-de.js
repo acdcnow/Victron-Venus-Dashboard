@@ -25,6 +25,7 @@ export default {
   },
   fields: {
     theme: "Design",
+    demo: "Vorschau ohne Entitäten",
     columns_1: "Geräte in Spalte 1",
     columns_2: "Geräte in Spalte 2",
     columns_3: "Geräte in Spalte 3",
@@ -58,7 +59,7 @@ export default {
     color_gauge: "Anzeige",
     numbers_decimals: "Dezimalstellen für alle Entitäten",
     numbers_auto: "Genauigkeit von Home Assistant verwenden",
-    numbers_numeric_only: "Nur Zahlen formatieren",
+    numbers_main_only: "Nur Zahlen formatieren",
     numbers_trim: "Nachlaufende Nullen entfernen",
     numbers_missing: "Text für fehlende Entitäten",
     links_direction: "Flussrichtung",
@@ -78,6 +79,7 @@ export default {
     unit_scale: "Größe der Einheit",
     graphs_hours: "Zeitfenster",
     graphs_refresh: "Aktualisierungsintervall",
+    graphs_segments: "Detail der Verlaufsgrafik",
     custom_css: "Eigenes CSS für die Karte",
     icon: "Symbol",
     name: "Name",
@@ -95,9 +97,11 @@ export default {
     link_start: "Start-Ankerpunkt",
     link_end: "End-Ankerpunkt",
     link_entity: "Entität für die Flussrichtung",
-    link_direction: "Flussrichtung"
+    link_direction: "Flussrichtung",
+    link_curve: "Linienform"
   },
   helpers: {
+    demo: "Behält die Boxen und ihre Titel, lässt aber alle Werte leer. Praktisch beim Gestalten eines Layouts.",
     aspect: "Höhe der Karte, in Prozent ihrer Breite.",
     padding: "CSS-Kurzschreibweise, zum Beispiel 25px 20px 15px 20px.",
     background_preset: "Design folgt dem Home-Assistant-Design, Transparent zeigt die Seite hinter der Karte.",
@@ -108,7 +112,7 @@ export default {
     color_dashboard: "Akzeptiert #rrggbb, rgb(), einen Farbnamen oder eine CSS-Variable. Leer verwendet den Designwert.",
     numbers_decimals: "Leer zeigt den Wert genau so, wie Home Assistant ihn meldet.",
     numbers_auto: "Verwendet die Genauigkeit, die du für die Entität in Home Assistant eingestellt hast.",
-    numbers_numeric_only: "Lässt Zustände wie on, off, unknown oder unavailable unverändert.",
+    numbers_main_only: "Lässt Zustände wie on, off, unknown oder unavailable unverändert.",
     numbers_trim: "Macht aus 12,50 den Wert 12,5.",
     numbers_missing: "Wird angezeigt, wenn die gewählte Entität nicht existiert.",
     links_direction: "Automatisch folgt dem Vorzeichen der verknüpften Entität: positiv fließt von Start zu Ende.",
@@ -116,6 +120,9 @@ export default {
     links_curve: "Gerade zeichnet eine direkte Linie, Automatisch führt um die Boxen herum.",
     graphs_hours: "Wie viel Verlauf die Kurve zeigt.",
     graphs_refresh: "Wie oft der Verlauf neu geladen wird.",
+    graphs_segments: "Höhere Werte behalten mehr Spitzen, wenn der Verlauf reduziert wird.",
+    link_curve: "Überschreibt die Linienform der ganzen Karte für diese Verbindung.",
+    link_direction: "Überschreibt die Flussrichtung der ganzen Karte für diese Verbindung.",
     custom_css: "Wird auf das Kartenelement angewendet, zum Beispiel box-shadow oder border.",
     font_header: "Akzeptiert auto, einen Pixelwert wie 14px oder eine CSS-Länge.",
     anchor_left: "Anzahl der Verbindungspunkte auf dieser Seite der Box.",
@@ -142,7 +149,8 @@ export default {
     direction_both: "Beide Richtungen",
     direction_off: "Keine Anzeige",
     curve_auto: "Automatisch",
-    curve_straight: "Gerade"
+    curve_straight: "Gerade",
+    curve_inherit: "Karten-Einstellung"
   },
   actions: {
     add_link: "Verbindung hinzufügen",
@@ -150,6 +158,6 @@ export default {
   },
   messages: {
     no_links: "Es sind noch keine Verbindungen eingerichtet.",
-    device_missing: "Diese Box gehört nicht zum aktuellen Spaltenlayout."
+    device_empty: "Diese Box hat noch keine Einstellungen. Felder unten ausfüllen, um sie hinzuzufügen."
   }
 };

@@ -561,7 +561,15 @@ function linkDirection(link, config) {
     return link.direction === "auto" ? config.links.direction : link.direction;
 }
 
-function buildPathData(coords1, coords2, anchorId1, anchorId2, curve) {
+/**
+ * Line shape of one connection: the link can override the card wide setting,
+ * `null` (not set) means the card wide value is used.
+ */
+export function resolveCurve(link, config) {
+    return link.curve || config.links.curve;
+}
+
+export function buildPathData(coords1, coords2, anchorId1, anchorId2, curve) {
     if (coords1.x === coords2.x || coords1.y === coords2.y || curve === "straight") {
         return `M ${coords1.x} ${coords1.y} L ${coords2.x} ${coords2.y}`;
     }
@@ -608,7 +616,7 @@ function creatLine(linkId, anchorId1, anchorId2, link, config, pathContainer, ci
         return;
     }
 
-    const curve = link.curve || config.links.curve;
+    const curve = resolveCurve(link, config);
     const pathData = buildPathData(coords1, coords2, anchorId1, anchorId2, curve);
     if (pathData.includes("NaN")) {
         console.warn(`Venus dashboard: ignoring SVG path with NaN (${linkId}).`);

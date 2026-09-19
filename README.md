@@ -4,9 +4,10 @@ A custom [Home Assistant](https://www.home-assistant.io/) card that reproduces t
 Victron Venus GUI v2 overview: one box per device, connected by lines whose flow
 follows your power values.
 
-**Current pre-release: `2.0.0-beta.1`** — a rework for Home Assistant 2026.9 with
+**Current pre-release: `2.0.0-beta.2`** — a rework for Home Assistant 2026.9 with
 decimal places per entity, a controllable flow direction and fully customizable
-backgrounds and colours.
+backgrounds and colours. Every option of the card is available in the visual
+editor, so no YAML is needed for any feature.
 
 ---
 
@@ -14,12 +15,13 @@ backgrounds and colours.
 
 | Version | Home Assistant | Where to get it | Status |
 | --- | --- | --- | --- |
-| **2.0.0-beta.1** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.1`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| **2.0.0-beta.2** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.2`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| 2.0.0-beta.1 | Built for 2026.9 | GitHub pre-release `2.0.0-beta.1` | Superseded by `2.0.0-beta.2` |
 | 1.17.0 | 2026.1 and newer | Default branch, release `1.17.0` | Stable, see the [1.17.0 README](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/1.17.0/README.md) |
 
 > **The default branch still contains the 1.17.0 code.** Everything documented
 > below describes the 2.0 pre-release. To install it, add the repository in HACS
-> and enable pre-release versions, then download `2.0.0-beta.1`. Stay on `1.17.0`
+> and enable pre-release versions, then download `2.0.0-beta.2`. Stay on `1.17.0`
 > if you do not want a pre-release.
 
 The card itself renders on older Home Assistant versions as well, because every
@@ -38,11 +40,13 @@ instance.
 ## Features
 
 * 🎛 **Full visual editor** — one tab for the card, one per column, no YAML needed.
+  Every option below is reachable in the editor, including adding and removing a
+  box or a connection.
 * 🔢 **Decimal places per entity** — every value, including the header and footer
   sensors, has its own precision setting, and the card can follow the display
   precision of Home Assistant.
 * 🔀 **Flow direction control** — per connection: automatic, forward, reverse,
-  both directions or no indicator at all.
+  both directions or no indicator at all, plus a line shape per connection.
 * 🎨 **Background presets** — theme, transparent, solid colour, gradient, image or
   custom CSS, with light and dark variants.
 * 🌈 **Customizable colours** — Home Assistant theme, the classic Victron palette
@@ -67,7 +71,7 @@ instance.
 4. Add `https://github.com/acdcnow/Victron-Venus-Dashboard` and select **Lovelace**.
 5. Search for "Victron Venus Dashboard" and click **Download**.
    * For the 2.0 pre-release, first enable beta versions for this repository, then
-     pick `2.0.0-beta.1`.
+     pick `2.0.0-beta.2`.
 6. Reload your browser.
 
 HACS downloads the whole `dist` folder, so updating through HACS is always
@@ -93,19 +97,24 @@ itself and one tab per column.
 
 | Section | What it configures |
 | --- | --- |
-| Layout | Theme, number of devices per column, card height, corner radius, spacing |
-| Background | Preset, colours, gradient, image, opacity and custom CSS |
+| Layout | Theme, preview mode, number of devices per column, card height, corner radius, spacing |
+| Background | Preset, colours, gradient, image, opacity, whether it covers the whole card and custom CSS |
 | Colors | Home Assistant theme, the classic Victron palette or your own colours |
-| Number formatting | Decimal places, Home Assistant display precision, trailing zeros |
-| Connection lines | Flow direction, line shape, animation, speed, width, indicator size |
+| Number formatting | Decimal places, Home Assistant display precision, trailing zeros, number only filter and the text for missing entities |
+| Connection lines | Flow direction, line shape, animation, speed, width, indicator size and opacity |
 | Fonts | Font sizes and weights per zone, font family, unit size |
-| History graphs | History window and refresh interval |
+| History graphs | History window, refresh interval and graph detail |
 | Custom CSS | Raw CSS for the card element |
 
 ### Column tabs
 
 Each box has its own panels for the header (icon and name), the main sensors, the
 header and footer sensors, the anchors and the connections.
+
+The tabs offer one entry per box of the current column layout, also for boxes that
+have no settings yet: fill in a field and the box appears on the card. Clear every
+field and the box is removed again. The same applies to a connection. Nothing of
+that needs YAML.
 
 ---
 
@@ -164,6 +173,7 @@ devices:
         end: 2-1_L-1
         entity: sensor.grid_power
         direction: auto
+        curve: auto
 ```
 
 | `direction` | Behaviour |
@@ -175,7 +185,8 @@ devices:
 | `off` | No dot, only the line |
 
 `links.direction` sets the default for every connection. The version 1 key
-`inv: true` still means `reverse`.
+`inv: true` still means `reverse`. The editor shows the direction (and the line
+shape) inside the panel of every single connection.
 
 Anchor names are `<column>-<box>_<side>-<index>`, with `L`, `R`, `T` and `B` for
 left, right, top and bottom. `anchors: "L-1, B-2"` creates one anchor on the left
@@ -183,8 +194,10 @@ and two at the bottom of that box.
 
 Further options: `links.curve` (`auto` or `straight`), `links.animate`,
 `links.speed` (higher is slower), `links.width`, `links.ball_size` and
-`links.opacity`. When your system asks for reduced motion, the dots are placed at
-the start of the line instead of animating.
+`links.opacity`. A connection can override the line shape of the card with its own
+`curve` (`auto` routes around the boxes, `straight` draws a direct line, leaving
+it out uses `links.curve`). When your system asks for reduced motion, the dots are
+placed at the start of the line instead of animating.
 
 ---
 
@@ -266,6 +279,7 @@ typography:
 graphs:
   hours: 24                 # history window
   refresh: 15               # minutes between refreshes
+  segments: 6               # min/max segments kept when reducing the history
 custom_css: ""              # raw CSS for the card element
 
 devices:
@@ -292,7 +306,8 @@ devices:
         start: R-1
         end: 2-1_L-1
         entity: sensor.grid_power
-        direction: auto
+        direction: auto          # auto | forward | reverse | both | off
+        curve: auto              # auto | straight, or omitted for links.curve
 ```
 
 ---

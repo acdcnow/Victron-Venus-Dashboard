@@ -40,6 +40,46 @@ function includes(name, haystack, needle) {
 
 const tick = (ms = 30) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Dot paths of every leaf of a configuration object. */
+function flattenPaths(value, prefix = "", target = []) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        Object.keys(value).forEach((key) =>
+            flattenPaths(value[key], prefix ? `${prefix}.${key}` : key, target)
+        );
+        if (Object.keys(value).length === 0 && prefix) target.push(prefix);
+        return target;
+    }
+    if (prefix) target.push(prefix);
+    return target;
+}
+
+/** Order independent JSON, for structural comparisons. */
+function canonical(value) {
+    if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+    if (value && typeof value === "object") {
+        return `{${Object.keys(value)
+            .sort()
+            .map((key) => `${key}:${canonical(value[key])}`)
+            .join(",")}}`;
+    }
+    return JSON.stringify(value ?? null);
+}
+
+/** Drops the raw configuration copies, so only the resolved values are compared. */
+function withoutRaw(value) {
+    if (Array.isArray(value)) return value.map(withoutRaw);
+    if (value && typeof value === "object") {
+        const copy = {};
+        Object.keys(value)
+            .filter((key) => key !== "raw")
+            .forEach((key) => {
+                copy[key] = withoutRaw(value[key]);
+            });
+        return copy;
+    }
+    return value;
+}
+
 /* ------------------------------------------------------------------ *
  * 1. Configuration normalization and migration
  * ------------------------------------------------------------------ */
@@ -591,7 +631,52 @@ async function testFlowDirectionAsync() {
 }
 
 /* ------------------------------------------------------------------ *
- * 6. Editor
+ * 7. Line shape per connection
+ * ------------------------------------------------------------------ */
+
+function testLineShape() {
+    const cardWide = normalizeConfig({ links: { curve: "straight" } });
+
+    const withCurve = (curve) =>
+        normalizeConfig({
+            devices: {
+                "1-1": {
+                    anchors: "R-1",
+                    link: { 1: { start: "R-1", end: "2-1_L-1", curve } },
+                },
+            },
+        }).devices["1-1"].links[0];
+
+    equal("curve: the per link value survives normalization", withCurve("straight").curve, "straight");
+    equal("curve: an unknown value is dropped", withCurve("wobbly").curve, null);
+
+    equal(
+        "curve: the card setting is used when the link has none",
+        libVenus.resolveCurve({ curve: null }, cardWide),
+        "straight"
+    );
+    equal(
+        "curve: a link overrides the card setting",
+        libVenus.resolveCurve({ curve: "auto" }, cardWide),
+        "auto"
+    );
+
+    const from = { x: 10, y: 20 };
+    const to = { x: 300, y: 400 };
+    includes(
+        "curve: straight draws a direct line",
+        libVenus.buildPathData(from, to, "1-1_R-1", "2-1_L-1", "straight"),
+        "L 300 400"
+    );
+    includes(
+        "curve: automatic routes around the boxes",
+        libVenus.buildPathData(from, to, "1-1_R-1", "2-1_L-1", "auto"),
+        "C "
+    );
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. Editor
  * ------------------------------------------------------------------ */
 
 async function testEditor() {
@@ -647,6 +732,40 @@ async function testEditor() {
 
     editor.hass = mockHass(standardStates());
     await tick(120);
+
+    editor.hass = mockHass(standardStates());
+    await tick(120);
+
+    // The device and connection forms need a translation as well: this is where
+    // the per entity decimals, the anchors and the link fields live.
+    editor._tab = "1";
+    editor._render();
+    await tick(60);
+    for (const language of languages) {
+        editor.hass = { ...mockHass(standardStates()), language };
+        await tick(120);
+
+        const untranslated = [];
+        [...editor.shadowRoot.querySelectorAll("ha-form")].forEach((form) => {
+            (form.schema || []).forEach((item) => {
+                const label = form.computeLabel?.(item) ?? "";
+                if (label.startsWith("⚠️")) untranslated.push(`${language}:${item.name}`);
+            });
+        });
+        equal(`editor: all device labels translated (${language})`, untranslated.length, 0);
+        if (untranslated.length > 0) {
+            results.push({
+                name: `editor: untranslated device labels (${language})`,
+                ok: false,
+                detail: untranslated.join(", "),
+            });
+        }
+    }
+    editor._tab = "card";
+    editor.hass = mockHass(standardStates());
+    await tick(120);
+    editor._render();
+    await tick(60);
 
     // Card level: background preset and colours
     const backgroundForm = [...editor.shadowRoot.querySelectorAll("ha-form")].find((form) =>
@@ -816,6 +935,407 @@ async function testEditor() {
 }
 
 /* ------------------------------------------------------------------ *
+ * 9. Editor coverage
+ * ------------------------------------------------------------------ */
+
+/** Every option of the card, as documented in the README. */
+const EXPECTED_PATHS = [
+    "theme",
+    "demo",
+    "layout.columns",
+    "layout.aspect",
+    "layout.radius",
+    "layout.gap",
+    "layout.max_box_height",
+    "layout.padding",
+    "background.preset",
+    "background.color",
+    "background.color_light",
+    "background.from",
+    "background.to",
+    "background.angle",
+    "background.opacity",
+    "background.image",
+    "background.blend",
+    "background.card",
+    "background.css",
+    "colors.mode",
+    "colors.dashboard",
+    "colors.box",
+    "colors.boxBorder",
+    "colors.shadow",
+    "colors.anchor",
+    "colors.line",
+    "colors.ball",
+    "colors.graph",
+    "colors.text",
+    "colors.unit",
+    "colors.gauge",
+    "numbers.decimals",
+    "numbers.auto",
+    "numbers.main_only",
+    "numbers.trim",
+    "numbers.missing",
+    "links.direction",
+    "links.curve",
+    "links.animate",
+    "links.speed",
+    "links.width",
+    "links.ball_size",
+    "links.opacity",
+    "typography.header",
+    "typography.sensor",
+    "typography.sensor2",
+    "typography.footer",
+    "typography.family",
+    "typography.header_weight",
+    "typography.sensor_weight",
+    "typography.unit_scale",
+    "graphs.hours",
+    "graphs.refresh",
+    "graphs.segments",
+    "custom_css",
+    "devices.1-1.icon",
+    "devices.1-1.name",
+    "devices.1-1.entity",
+    "devices.1-1.decimals",
+    "devices.1-1.entity2",
+    "devices.1-1.decimals_entity2",
+    "devices.1-1.graph",
+    "devices.1-1.gauge",
+    "devices.1-1.headerEntity",
+    "devices.1-1.decimals_header",
+    "devices.1-1.footerEntity1",
+    "devices.1-1.decimals_footer1",
+    "devices.1-1.footerEntity2",
+    "devices.1-1.decimals_footer2",
+    "devices.1-1.footerEntity3",
+    "devices.1-1.decimals_footer3",
+    "devices.1-1.anchors",
+    "devices.1-1.link.1.start",
+    "devices.1-1.link.1.end",
+    "devices.1-1.link.1.entity",
+    "devices.1-1.link.1.direction",
+    "devices.1-1.link.1.curve",
+];
+
+/**
+ * The editor has to reach every option of the card, so that no YAML editing is
+ * needed for any of the features. This test drives the descriptors directly:
+ * it collects the configuration paths they write, compares them with the list
+ * above and rebuilds a fully populated configuration from the form data of an
+ * empty one. A new card option without an editor field fails this test.
+ */
+async function testEditorCoverage() {
+    const {
+        cardDescriptors,
+        deviceDescriptors,
+        linkDescriptors,
+        applyFormData,
+        formData,
+        buildSchema,
+        pruneConfig,
+        setAnchorProvider,
+    } = await import("../dist/lib-editor.js");
+
+    // The connection dropdowns need an anchor list; the schema only is used here.
+    setAnchorProvider((boxKey, self) => [
+        { value: `${boxKey}_${self ? "R" : "L"}-1`, label: "1-1 · R-1" },
+    ]);
+
+    const reference = {
+        theme: "dark",
+        demo: true,
+        layout: {
+            columns: [2, 1, 1],
+            aspect: 60,
+            radius: 12,
+            gap: 2,
+            max_box_height: 80,
+            padding: "20px 10px",
+        },
+        background: {
+            preset: "gradient",
+            color: "#101010",
+            color_light: "#f5f5f5",
+            from: "#000000",
+            to: "#ffffff",
+            angle: 45,
+            opacity: 80,
+            image: "/local/background.png",
+            blend: "overlay",
+            card: false,
+            css: "background-size: cover;",
+        },
+        colors: {
+            mode: "custom",
+            dashboard: "#010101",
+            box: "#020202",
+            boxBorder: "#030303",
+            shadow: "#040404",
+            anchor: "#050505",
+            line: "#060606",
+            ball: "#070707",
+            graph: "#080808",
+            text: "#090909",
+            unit: "#0a0a0a",
+            gauge: "#0b0b0b",
+        },
+        numbers: { decimals: 2, auto: true, main_only: true, trim: true, missing: "n/a" },
+        links: {
+            direction: "both",
+            curve: "straight",
+            animate: false,
+            speed: 8,
+            width: 2.5,
+            ball_size: 5,
+            opacity: 0.6,
+        },
+        typography: {
+            header: "14px",
+            sensor: "30px",
+            sensor2: "18px",
+            footer: "11px",
+            family: "Inter",
+            header_weight: 600,
+            sensor_weight: 300,
+            unit_scale: 0.8,
+        },
+        graphs: { hours: 12, refresh: 30, segments: 8 },
+        custom_css: "border: 1px solid red;",
+        devices: {
+            "1-1": {
+                icon: "mdi:transmission-tower",
+                name: "Grid",
+                entity: "sensor.grid_power",
+                decimals: 1,
+                entity2: "sensor.battery_current",
+                decimals_entity2: "auto",
+                graph: true,
+                gauge: true,
+                headerEntity: "sensor.temperature",
+                decimals_header: 3,
+                footerEntity1: "sensor.battery_soc",
+                decimals_footer1: 0,
+                footerEntity2: "sensor.solar_power",
+                decimals_footer2: "auto",
+                footerEntity3: "sensor.temperature",
+                decimals_footer3: 1,
+                anchors: "L-1, R-2",
+                link: {
+                    1: {
+                        start: "R-2",
+                        end: "2-1_L-1",
+                        entity: "sensor.grid_power",
+                        direction: "reverse",
+                        curve: "straight",
+                    },
+                },
+            },
+        },
+    };
+
+    const sections = [
+        "general",
+        "background",
+        "colors",
+        "numbers",
+        "links",
+        "typography",
+        "graphs",
+        "advanced",
+    ];
+    const deviceFields = deviceDescriptors("1-1");
+    const linkFields = linkDescriptors("1-1", 1);
+    const allDescriptors = [
+        ...sections.flatMap((section) => cardDescriptors(section)),
+        ...deviceFields,
+        ...linkFields,
+    ];
+
+    // 1. Every documented option is written by one of the descriptors
+    const writable = new Set();
+    allDescriptors.forEach((descriptor) => {
+        const sample = descriptor.read(reference);
+        if (sample === undefined || sample === null || sample === "") return;
+        flattenPaths(descriptor.write({}, sample)).forEach((path) => writable.add(path));
+    });
+
+    const unreachable = EXPECTED_PATHS.filter((path) => !writable.has(path));
+    check(
+        "editor: every option of the card is editable without YAML",
+        unreachable.length === 0,
+        `not reachable: ${unreachable.join(", ")}`
+    );
+
+    const undocumented = [...writable].filter((path) => !EXPECTED_PATHS.includes(path));
+    check(
+        "editor: the editor writes no undocumented option",
+        undocumented.length === 0,
+        `undocumented: ${undocumented.join(", ")}`
+    );
+
+    const names = allDescriptors.map((descriptor) => descriptor.key);
+    equal("editor: schema names are unique", new Set(names).size, names.length);
+    equal(
+        "editor: every field has a selector",
+        allDescriptors.filter((descriptor) => typeof descriptor.selector !== "object").length,
+        0
+    );
+    equal(
+        "editor: a schema is built for every field",
+        buildSchema(allDescriptors).length,
+        allDescriptors.length
+    );
+
+    // 2. Form data of a full configuration applied to an empty one restores it
+    const restored = normalizeConfig(
+        applyFormData({}, allDescriptors, formData(reference, allDescriptors))
+    );
+    equal(
+        "editor: the whole configuration can be built from the editor",
+        canonical(withoutRaw(restored)),
+        canonical(withoutRaw(normalizeConfig(reference)))
+    );
+
+    /* ---- The same features through the real editor element -------------- */
+
+    const editor = document.createElement("venus-os-editor");
+    document.body.appendChild(editor);
+    editor.hass = mockHass(standardStates());
+    editor.setConfig({
+        layout: { columns: [2, 1, 1] },
+        devices: { "1-1": { name: "Grid", anchors: "R-1" } },
+    });
+    await tick(80);
+
+    const formNamed = (name) =>
+        [...editor.shadowRoot.querySelectorAll("ha-form")].find((form) =>
+            (form.schema || []).some((item) => item.name === name)
+        );
+
+    formNamed("demo").setValue("demo", true);
+    await tick(20);
+    equal("editor: preview mode written", editor.value.demo, true);
+
+    formNamed("graphs_segments").setValue("graphs_segments", 10);
+    await tick(20);
+    equal("editor: graph detail written", editor.value.graphs.segments, 10);
+
+    formNamed("background_card").setValue("background_card", false);
+    await tick(20);
+    equal("editor: the card background can be switched off", editor.value.background.card, false);
+
+    // A box of the layout without settings must be editable as well
+    editor._tab = "1";
+    editor._render();
+    await tick(60);
+    const secondBoxTab = [...editor.shadowRoot.querySelectorAll("ha-tab-group-tab")].find(
+        (tab) => tab.getAttribute("panel") === "1-2"
+    );
+    secondBoxTab.click();
+    await tick(60);
+
+    check(
+        "editor: an empty box still shows the device forms",
+        editor.shadowRoot.querySelectorAll("ha-form").length >= 4,
+        `${editor.shadowRoot.querySelectorAll("ha-form").length} forms`
+    );
+    const emptyBoxForm = formNamed("entity");
+    check("editor: the empty box can be filled in", Boolean(emptyBoxForm));
+    emptyBoxForm.setValues({ entity: "sensor.grid_power", gauge: true, graph: true });
+    await tick(20);
+    equal(
+        "editor: filling in a field creates the box",
+        editor.value.devices["1-2"].entity,
+        "sensor.grid_power"
+    );
+    equal("editor: the new box can show a gauge", editor.value.devices["1-2"].gauge, true);
+
+    // The name lives in the header form
+    formNamed("icon").setValue("name", "Battery");
+    await tick(20);
+    equal("editor: the new box keeps its name", editor.value.devices["1-2"].name, "Battery");
+
+    formNamed("anchor_right").setValue("anchor_right", 1);
+    await tick(20);
+    equal("editor: the new box can get anchors", editor.value.devices["1-2"].anchors, "R-1");
+
+    const addLink = [...editor.shadowRoot.querySelectorAll("ha-button")].find((button) =>
+        button.innerHTML.includes("mdi:plus")
+    );
+    addLink.click();
+    await tick(60);
+    check(
+        "editor: a connection can be added to the new box",
+        Boolean(editor.value.devices["1-2"].link),
+        JSON.stringify(editor.value.devices["1-2"])
+    );
+
+    formNamed("link_1_curve").setValue("link_1_curve", "straight");
+    await tick(20);
+    equal(
+        "editor: the line shape can be set per connection",
+        editor.value.devices["1-2"].link[1].curve,
+        "straight"
+    );
+
+    formNamed("link_1_direction").setValue("link_1_direction", "reverse");
+    await tick(20);
+    equal(
+        "editor: the flow direction can be set per connection",
+        editor.value.devices["1-2"].link[1].direction,
+        "reverse"
+    );
+
+    formNamed("link_1_curve").setValue("link_1_curve", "inherit");
+    await tick(20);
+    check(
+        "editor: inheriting the line shape removes the key",
+        editor.value.devices["1-2"].link[1].curve === undefined,
+        JSON.stringify(editor.value.devices["1-2"].link[1])
+    );
+    editor.remove();
+
+    // 3. Empty boxes and connections are pruned again
+    const cleared = pruneConfig({ devices: { "1-1": {}, "1-2": { link: { 1: {} } } } });
+    check(
+        "editor: an emptied box is removed from the configuration",
+        cleared.devices === undefined,
+        JSON.stringify(cleared)
+    );
+    const partial = pruneConfig({
+        devices: { "1-1": { name: "Grid", link: { 1: {}, 2: { start: "R-1" } } } },
+    });
+    equal("editor: an emptied connection is removed", Object.keys(partial.devices["1-1"].link).join(","), "2");
+    equal("editor: a box with settings is kept", partial.devices["1-1"].name, "Grid");
+
+    const pruner = document.createElement("venus-os-editor");
+    document.body.appendChild(pruner);
+    pruner.hass = mockHass(standardStates());
+    pruner.setConfig({
+        layout: { columns: [1, 1, 1] },
+        devices: { "1-1": { entity: "sensor.grid_power" } },
+    });
+    await tick(80);
+    pruner._tab = "1";
+    pruner._render();
+    await tick(60);
+
+    const lastForm = [...pruner.shadowRoot.querySelectorAll("ha-form")].find((form) =>
+        (form.schema || []).some((item) => item.name === "entity")
+    );
+    lastForm.setValue("entity", "");
+    await tick(20);
+    check(
+        "editor: emptying the last field removes the box",
+        pruner.value.devices === undefined,
+        JSON.stringify(pruner.value)
+    );
+    pruner.remove();
+}
+
+/* ------------------------------------------------------------------ *
  * Runner
  * ------------------------------------------------------------------ */
 
@@ -827,7 +1347,9 @@ async function run() {
     testStyleVariables();
     testCard();
     await testFlowDirection();
+    testLineShape();
     await testEditor();
+    await testEditorCoverage();
 
     const failed = results.filter((result) => !result.ok);
     const output = document.getElementById("results");

@@ -142,6 +142,13 @@ const decimalsSelector = () =>
 const text = (multiline) => (multiline ? { text: { multiline: true } } : { text: {} });
 const boolean = () => ({ boolean: {} });
 
+/** Line shape per connection: inherit the card setting, or force one. */
+const curveSelector = () =>
+    select([
+        { value: "inherit", label: t("options", "curve_inherit") },
+        ...LINK_CURVES.map((value) => ({ value, label: t("options", `curve_${value}`) })),
+    ]);
+
 function directionSelector() {
     return select(
         LINK_DIRECTIONS.map((value) => ({
@@ -181,6 +188,13 @@ function cardSectionDescriptors(sectionId) {
                     ),
                     read: (config) => config.theme ?? "auto",
                     write: (config, value) => write(config, "theme", value),
+                },
+                {
+                    key: "demo",
+                    selector: boolean(),
+                    read: (config) => boolOr(getPath(config, "demo"), false),
+                    write: (config, value) =>
+                        write(config, "demo", value === true ? true : undefined),
                 },
                 ...[0, 1, 2].map((index) => ({
                     key: `columns_${index + 1}`,
@@ -312,8 +326,9 @@ function cardSectionDescriptors(sectionId) {
                     key: "background_card",
                     selector: boolean(),
                     read: (config) => boolOr(getPath(config, "background.card"), true),
+                    // An absent key means "on", so the off state has to be stored.
                     write: (config, value) =>
-                        write(config, "background.card", value === true ? true : undefined),
+                        write(config, "background.card", value === false ? false : undefined),
                 },
                 {
                     key: "background_css",
@@ -505,6 +520,12 @@ function cardSectionDescriptors(sectionId) {
                     read: (config) => read(config, "graphs.refresh", toNumberOrUndefined),
                     write: (config, value) => write(config, "graphs.refresh", value, toNumberOrUndefined),
                 },
+                {
+                    key: "graphs_segments",
+                    selector: numberBox(1, 24, 1),
+                    read: (config) => read(config, "graphs.segments", toNumberOrUndefined),
+                    write: (config, value) => write(config, "graphs.segments", value, toNumberOrUndefined),
+                },
             ];
 
         case "advanced":
@@ -690,6 +711,13 @@ function linkDescriptors(boxKey, index) {
                 return write(config, `${base}.direction`, value);
             },
         },
+        {
+            key: `link_${index}_curve`,
+            selector: curveSelector(),
+            read: (config) => getPath(config, `${base}.curve`, "inherit"),
+            write: (config, value) =>
+                write(config, `${base}.curve`, value === "inherit" ? undefined : value),
+        },
     ];
 }
 
@@ -744,6 +772,42 @@ export const cardDescriptors = cardSectionDescriptors;
 export { deviceDescriptors, linkDescriptors };
 
 /* ------------------------------------------------------------------ *
+ * Config pruning
+ * ------------------------------------------------------------------ */
+
+function isPlainObject(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Removes boxes and connections that have no settings left. This is what makes
+ * the editor able to delete a box again: clear every field and the entry is
+ * gone, while the box itself stays part of the column layout.
+ */
+export function pruneConfig(config) {
+    if (!isPlainObject(config) || !isPlainObject(config.devices)) return config;
+
+    Object.keys(config.devices).forEach((boxKey) => {
+        const device = config.devices[boxKey];
+        if (!isPlainObject(device)) return;
+
+        if (isPlainObject(device.link)) {
+            Object.keys(device.link).forEach((index) => {
+                if (isPlainObject(device.link[index]) && Object.keys(device.link[index]).length === 0) {
+                    delete device.link[index];
+                }
+            });
+            if (Object.keys(device.link).length === 0) delete device.link;
+        }
+
+        if (Object.keys(device).length === 0) delete config.devices[boxKey];
+    });
+
+    if (Object.keys(config.devices).length === 0) delete config.devices;
+    return config;
+}
+
+/* ------------------------------------------------------------------ *
  * Rendering
  * ------------------------------------------------------------------ */
 
@@ -772,8 +836,13 @@ function createForm(editor, descriptors, config, onChange, extraClass) {
     form.hass = editor._hass;
     form.data = formData(config, descriptors);
     form.schema = buildSchema(descriptors);
-    form.computeLabel = (schema) =>
-        localize("fields", labelKey(schema.name), schema.name);
+    form.computeLabel = (schema) => {
+        const key = labelKey(schema.name);
+        // `t` returns a visible marker for a missing key, so a forgotten
+        // translation shows up in the UI and in the tests instead of silently
+        // falling back to the schema name.
+        return localize("fields", key, t("fields", key));
+    };
     form.computeHelper = (schema) =>
         localize("helpers", labelKey(schema.name), "") || undefined;
     form.addEventListener("value-changed", (event) => {
@@ -828,13 +897,16 @@ export function renderColumnTab(editor, container, column) {
     content.className = "editor";
     container.appendChild(content);
 
+    // Every box of the layout is editable, even when it has no settings yet:
+    // filling in a field creates the device entry, so no YAML round trip is
+    // needed to add a box. Clearing every field removes it again (see
+    // `pruneConfig`).
     const device = normalizeConfig(editor._config).devices[boxKey];
     if (!device) {
         const hint = document.createElement("div");
         hint.className = "empty-hint";
-        hint.textContent = t("messages", "device_missing");
+        hint.textContent = t("messages", "device_empty");
         content.appendChild(hint);
-        return;
     }
 
     // Header, main sensors, header/footer sensors, anchors

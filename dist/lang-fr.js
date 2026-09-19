@@ -25,6 +25,7 @@ export default {
   },
   fields: {
     theme: "Thème",
+    demo: "Aperçu sans entités",
     columns_1: "Appareils dans la colonne 1",
     columns_2: "Appareils dans la colonne 2",
     columns_3: "Appareils dans la colonne 3",
@@ -58,7 +59,7 @@ export default {
     color_gauge: "Jauge",
     numbers_decimals: "Décimales pour toutes les entités",
     numbers_auto: "Utiliser la précision d'affichage de Home Assistant",
-    numbers_numeric_only: "Formater uniquement les nombres",
+    numbers_main_only: "Formater uniquement les nombres",
     numbers_trim: "Supprimer les zéros finaux",
     numbers_missing: "Texte pour les entités absentes",
     links_direction: "Sens du flux",
@@ -78,6 +79,7 @@ export default {
     unit_scale: "Taille de l'unité",
     graphs_hours: "Période d'historique",
     graphs_refresh: "Intervalle de rafraîchissement",
+    graphs_segments: "Détail du graphique d'historique",
     custom_css: "CSS personnalisé de la carte",
     icon: "Icône",
     name: "Nom",
@@ -95,9 +97,11 @@ export default {
     link_start: "Ancrage de départ",
     link_end: "Ancrage d'arrivée",
     link_entity: "Entité pour le sens du flux",
-    link_direction: "Sens du flux"
+    link_direction: "Sens du flux",
+    link_curve: "Forme de la ligne"
   },
   helpers: {
+    demo: "Conserve les blocs et leurs titres, mais laisse toutes les valeurs vides. Utile pendant la conception d'une disposition.",
     aspect: "Hauteur de la carte, en pourcentage de sa largeur.",
     padding: "Raccourci CSS, par exemple 25px 20px 15px 20px.",
     background_preset: "Thème suit le thème de Home Assistant, Transparent laisse apparaître la page derrière la carte.",
@@ -108,7 +112,7 @@ export default {
     color_dashboard: "Accepte #rrggbb, rgb(), un nom de couleur ou une variable CSS. Vide utilise la valeur du thème.",
     numbers_decimals: "Vide affiche la valeur telle que Home Assistant la rapporte.",
     numbers_auto: "Utilise la précision configurée pour l'entité dans Home Assistant.",
-    numbers_numeric_only: "Laisse les états comme on, off, unknown ou unavailable inchangés.",
+    numbers_main_only: "Laisse les états comme on, off, unknown ou unavailable inchangés.",
     numbers_trim: "Transforme 12.50 en 12.5.",
     numbers_missing: "Affiché lorsque l'entité choisie n'existe pas.",
     links_direction: "Automatique suit le signe de l'entité liée : positif va du départ vers l'arrivée.",
@@ -116,6 +120,9 @@ export default {
     links_curve: "Droite trace une ligne directe, Automatique contourne les blocs.",
     graphs_hours: "Quantité d'historique affichée par la courbe.",
     graphs_refresh: "Fréquence de rechargement de l'historique.",
+    graphs_segments: "Une valeur élevée conserve plus de pics lorsque l'historique est réduit.",
+    link_curve: "Remplace la forme de ligne de toute la carte pour cette liaison.",
+    link_direction: "Remplace le sens du flux de toute la carte pour cette liaison.",
     custom_css: "Appliqué à l'élément de la carte, par exemple box-shadow ou border.",
     font_header: "Accepte auto, une valeur en pixels comme 14px ou toute longueur CSS.",
     anchor_left: "Nombre de points de connexion sur ce côté du bloc.",
@@ -142,7 +149,8 @@ export default {
     direction_both: "Les deux sens",
     direction_off: "Aucun indicateur",
     curve_auto: "Automatique",
-    curve_straight: "Droite"
+    curve_straight: "Droite",
+    curve_inherit: "Réglage de la carte"
   },
   actions: {
     add_link: "Ajouter une liaison",
@@ -150,6 +158,6 @@ export default {
   },
   messages: {
     no_links: "Aucune liaison n'est encore configurée.",
-    device_missing: "Ce bloc ne fait pas partie de la disposition actuelle des colonnes."
+    device_empty: "Ce bloc n'a encore aucun réglage. Remplissez les champs ci-dessous pour l'ajouter."
   }
 };
