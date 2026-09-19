@@ -14,7 +14,7 @@ backgrounds and colours.
 
 | Version | Home Assistant | Where to get it | Status |
 | --- | --- | --- | --- |
-| **2.0.0-beta.1** | Developed and tested on **2026.9** | GitHub pre-release `2.0.0-beta.1`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| **2.0.0-beta.1** | Built for **2026.9** | GitHub pre-release `2.0.0-beta.1`, branch `HA2026_09_dev` | Pre-release, documented on this page |
 | 1.17.0 | 2026.1 and newer | Default branch, release `1.17.0` | Stable, see the [1.17.0 README](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/1.17.0/README.md) |
 
 > **The default branch still contains the 1.17.0 code.** Everything documented
@@ -26,6 +26,12 @@ The card itself renders on older Home Assistant versions as well, because every
 design token has a fallback. The **visual editor** uses the current frontend
 components (`ha-tab-group`, `ha-form`), so on older installations configure the
 card with YAML instead.
+
+The pre-release is verified without a Home Assistant instance: the test harness
+renders the card and the editor in a real browser and covers the configuration
+handling, the number formatting, the flow direction and the generated styles (see
+[Testing](#testing)). Please report anything that behaves differently on your
+instance.
 
 ---
 
