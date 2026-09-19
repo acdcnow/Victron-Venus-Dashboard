@@ -4,29 +4,50 @@ A custom [Home Assistant](https://www.home-assistant.io/) card that reproduces t
 Victron Venus GUI v2 overview: one box per device, connected by lines whose flow
 follows your power values.
 
-Current version: **2.0.0-beta.1**
+**Current pre-release: `2.0.0-beta.1`** — a rework for Home Assistant 2026.9 with
+decimal places per entity, a controllable flow direction and fully customizable
+backgrounds and colours.
 
 ---
 
-## What changed in 2.0
+## Versions and compatibility
 
-* **Home Assistant 2026.9 ready.** The card no longer uses the removed Shoelace
-  components, renders inside a shadow root instead of leaking a stylesheet into
-  every other card, and uses the current Home Assistant design tokens and theme
-  variables.
-* **Decimal places per entity.** Every entity slot (main, second, header and the
-  three footer values) has its own decimal setting, and the card can follow the
-  display precision you configured in Home Assistant.
-* **Flow direction control.** Each connection can flow forwards, backwards, in
-  both directions at once or stay still, and the default follows the sign of the
-  linked entity.
-* **Background presets.** Choose theme, transparent, a solid colour, a gradient,
-  an image or custom CSS, per light and dark mode.
-* **Everything is customizable.** Colours, fonts, spacing, line width, indicator
-  size, graph window and the option to add your own CSS.
+| Version | Home Assistant | Where to get it | Status |
+| --- | --- | --- | --- |
+| **2.0.0-beta.1** | Developed and tested on **2026.9** | GitHub pre-release `2.0.0-beta.1`, branch `HA2026_09_dev` | Pre-release, documented on this page |
+| 1.17.0 | 2026.1 and newer | Default branch, release `1.17.0` | Stable, see the [1.17.0 README](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/1.17.0/README.md) |
 
-Existing 1.x configurations keep working: the old keys (`param`, `styles`,
-`devices.<box>.decimals`, `link.<n>.inv`) are still read.
+> **The default branch still contains the 1.17.0 code.** Everything documented
+> below describes the 2.0 pre-release. To install it, add the repository in HACS
+> and enable pre-release versions, then download `2.0.0-beta.1`. Stay on `1.17.0`
+> if you do not want a pre-release.
+
+The card itself renders on older Home Assistant versions as well, because every
+design token has a fallback. The **visual editor** uses the current frontend
+components (`ha-tab-group`, `ha-form`), so on older installations configure the
+card with YAML instead.
+
+---
+
+## Features
+
+* 🎛 **Full visual editor** — one tab for the card, one per column, no YAML needed.
+* 🔢 **Decimal places per entity** — every value, including the header and footer
+  sensors, has its own precision setting, and the card can follow the display
+  precision of Home Assistant.
+* 🔀 **Flow direction control** — per connection: automatic, forward, reverse,
+  both directions or no indicator at all.
+* 🎨 **Background presets** — theme, transparent, solid colour, gradient, image or
+  custom CSS, with light and dark variants.
+* 🌈 **Customizable colours** — Home Assistant theme, the classic Victron palette
+  or your own colours for eleven colour slots.
+* 🛠 **Everything else** — fonts, spacing, line width, indicator size, opacity,
+  gauge, sparkline window, and raw CSS as the last resort.
+* 🚀 **Zero dependencies** — no additional cards or libraries, no build step.
+* 🌓 **Theme support** — follows your Home Assistant theme automatically.
+* 🌎 **Multi-language editor** — English, German, Spanish, French and Italian.
+* ♿ **Accessible** — keyboard reachable boxes, visible focus, reduced-motion aware
+  animations, `unavailable` states shown as such.
 
 ---
 
@@ -39,12 +60,17 @@ Existing 1.x configurations keep working: the old keys (`param`, `styles`,
 3. Click the three dots in the top right corner and select **Custom repositories**.
 4. Add `https://github.com/acdcnow/Victron-Venus-Dashboard` and select **Lovelace**.
 5. Search for "Victron Venus Dashboard" and click **Download**.
+   * For the 2.0 pre-release, first enable beta versions for this repository, then
+     pick `2.0.0-beta.1`.
 6. Reload your browser.
+
+HACS downloads the whole `dist` folder, so updating through HACS is always
+preferred over copying single files.
 
 ### Manual
 
-1. Download `dist/Victron-Venus-Dashboard.js` **and the other files of the `dist`
-   folder** of this repository.
+1. Download all files of the `dist` folder of this repository (the card is a set
+   of ES modules).
 2. Place them in `config/www/venus-os-dashboard/`.
 3. Add the resource in **Settings → Dashboards → three dots → Resources**:
    `/local/venus-os-dashboard/Victron-Venus-Dashboard.js` as **JavaScript module**.
@@ -63,7 +89,7 @@ itself and one tab per column.
 | --- | --- |
 | Layout | Theme, number of devices per column, card height, corner radius, spacing |
 | Background | Preset, colours, gradient, image, opacity and custom CSS |
-| Colors | Either the Home Assistant theme, the classic Victron palette or your own colours |
+| Colors | Home Assistant theme, the classic Victron palette or your own colours |
 | Number formatting | Decimal places, Home Assistant display precision, trailing zeros |
 | Connection lines | Flow direction, line shape, animation, speed, width, indicator size |
 | Fonts | Font sizes and weights per zone, font family, unit size |
@@ -84,8 +110,6 @@ The value of every entity is formatted with the first setting that applies:
 1. the setting of that entity slot (`devices.<box>.decimals_*`),
 2. the device setting (`devices.<box>.decimals`, which is the main value),
 3. the card setting (`numbers.decimals` or `numbers.auto`).
-
-Values:
 
 | Value | Meaning |
 | --- | --- |
@@ -120,7 +144,7 @@ devices:
 
 ## Connection lines
 
-Every connection is a line between one anchor of the box and an anchor of another
+Every connection is a line between one anchor of a box and an anchor of another
 box. The visible dots travel along that line.
 
 ```yaml
@@ -144,7 +168,7 @@ devices:
 | `both` | Two dots, one in each direction |
 | `off` | No dot, only the line |
 
-`links.direction` sets the default for every connection, and the version 1 key
+`links.direction` sets the default for every connection. The version 1 key
 `inv: true` still means `reverse`.
 
 Anchor names are `<column>-<box>_<side>-<index>`, with `L`, `R`, `T` and `B` for
@@ -182,8 +206,8 @@ colors:
 * Every colour accepts `#rrggbb`, `rgb()`, `hsl()`, a colour name or a CSS
   variable such as `var(--accent-color)`.
 
-Additionally the card exposes its own custom properties, so a theme or another
-card can restyle it without touching the configuration:
+The card also exposes its own custom properties, so a theme or another card can
+restyle it without touching the configuration:
 `--vv-dashboard-bg`, `--vv-box-bg`, `--vv-boxBorder`, `--vv-shadow`,
 `--vv-anchor`, `--vv-line`, `--vv-ball`, `--vv-graph`, `--vv-text`,
 `--vv-unit`, `--vv-gauge`, `--vv-font-header`, `--vv-font-sensor`,
@@ -279,22 +303,25 @@ uses the card background instead of the hardcoded near-black colour. Set
 `colors.mode: venus` and `background.preset: solid` with `#111111` to get the old
 appearance back.
 
+See [CHANGELOG.md](https://github.com/acdcnow/Victron-Venus-Dashboard/blob/HA2026_09_dev/CHANGELOG.md)
+for the complete list of additions, fixes and upgrade notes.
+
 ---
 
 ## Testing
 
-The card ships with two test layers, both runnable without a Home Assistant
-instance:
+The 2.0 branch ships with two test layers in its `tests` folder, both runnable
+without a Home Assistant instance:
 
 ```bash
-python tests/static-check.py                  # translations, imports, deprecations
-python -m http.server 8765                    # then open /tests/harness.html
+python tests/static-check.py    # translations, imports, deprecations, HACS layout
+python -m http.server 8765      # then open /tests/harness.html
 ```
 
 The browser harness stubs the Home Assistant frontend components, renders the card
 and the editor in a real browser and checks the configuration migration, the
 decimal handling, the flow direction, the generated style variables and the editor
-round trip.
+round trip (152 checks).
 
 ---
 
