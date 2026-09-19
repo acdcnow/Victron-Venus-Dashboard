@@ -1,192 +1,198 @@
 /*
+ * Victron Venus Dashboard for Home Assistant.
+ *
+ * A custom card that replicates the Victron Venus GUI v2 overview: boxes for
+ * grid, battery, inverter and loads, connected by animated lines.
+ *
+ * Version 2 renders inside a shadow root, so its stylesheet no longer leaks into
+ * every other card on the dashboard, and all colours, sizes and spacing come
+ * from the Home Assistant theme plus the `--vv-*` custom properties generated
+ * from the card configuration.
+ */
 
- Auto switch light/dark theme or manual choice
- 
- so extra param tab
-
-*/
+import "./editor.js";
+import * as libVenus from "./lib-venus.js";
+import {
+    CARD_TYPE,
+    VERSION,
+    buildStyleVariables,
+    getStubConfig,
+    resolveIsDark,
+} from "./lib-config.js";
+import { cssData } from "./css-common.js";
 
 console.info(
-  "%c 🗲 %c - %cVictron Venus BD%c - %c 🗲 \n%c version 0.1.20",
-  "color: white; font-weight: bold; background: black",
-  "color: orange; font-weight: bold; background: blue; font-weight: bold;",
-  "color: white; font-weight: bold; background: blue; text-decoration: underline; text-decoration-color: orange; text-decoration-thickness: 5px; text-underline-offset: 2px;",
-  "color: orange; font-weight: bold; background: blue; font-weight: bold;",
-  "color: white; font-weight: bold; background: black",
-  "color: white; font-weight: bold; background: grey"
+    `%c 🗲 %c - %cVictron Venus Dashboard%c - %c 🗲 \n%c version ${VERSION}`,
+    "color: white; font-weight: bold; background: black",
+    "color: orange; font-weight: bold; background: blue; font-weight: bold;",
+    "color: white; font-weight: bold; background: blue; text-decoration: underline; text-decoration-color: orange; text-decoration-thickness: 5px; text-underline-offset: 2px;",
+    "color: orange; font-weight: bold; background: blue; font-weight: bold;",
+    "color: white; font-weight: bold; background: black",
+    "color: white; font-weight: bold; background: grey"
 );
 
-import './editor.js';
-import * as libVenus from './lib-venus.js';
-
-import { cssDataDark } from './css-dark.js?v=0.1';
-import { cssDataLight } from './css-light.js?v=0.1';
-
-class venusOsDashboardCard extends HTMLElement {
-
-  static isDark = true;
-
-  static periodicTaskStarted = false;
-
-  static cycle = 0;
-
-  constructor() {
-    super();
-
-    // Listen for custom event
-    document.addEventListener('config-changed', (event) => {
-      // if(event.detail.redrawRequired) libVenus.razDashboardOldWidth();
-      libVenus.razDashboardOldWidth();
-    });
-
-  }
-
-  setConfig(config) {
-
-    this.config = config;
-
-    // Create static structure after receiving configuration
-    if (!this.content) {
-      this._createCardStructure();
-    }
-  }
-
-  _createCardStructure() {
-
-    // Initialize the content if it's not there yet.
-    if (!this.content) {
-
-      const cardElem = document.createElement('ha-card');
-      this.appendChild(cardElem);
-
-      const contElem = document.createElement('div');
-      contElem.setAttribute('id', 'db-container');
-      contElem.setAttribute('class', 'db-container');
-      cardElem.appendChild(contElem);
-
-      this.content = this.querySelector("div");
-
-      window.contElem = this.content;
-
+class VenusOsDashboardCard extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+        this._config = undefined;
+        this._venus = undefined;
+        this._hass = undefined;
+        this._isDark = true;
+        this._taskStarted = false;
+        this._isDark = true;
+        this._error = "";
     }
 
-    // Retrieve parameters
-    const param = this.config.param || [];
-
-    // Render basic card structure (in normal or "image" demo mode)
-    libVenus.baseRender(this.config, this.content);
-
-    // Retrieve quantity of boxes to create per column from parameters
-    const boxCol1 = param.boxCol1 ? Math.min(Math.max(param.boxCol1, 1), 4) : 1;
-    const boxCol2 = param.boxCol2 ? Math.min(Math.max(param.boxCol2, 1), 2) : 1;
-    const boxCol3 = param.boxCol3 ? Math.min(Math.max(param.boxCol3, 1), 4) : 1;
-
-    // Add boxes
-    if (this.config.demo !== true) libVenus.addBox(boxCol1, boxCol2, boxCol3, this.content);
-
-    // Add line attachment anchors
-    if (this.config.demo !== true) libVenus.addAnchors(this.config, this.content);
-
-  }
-
-  set hass(hass) {
-
-    this._hass = hass;
-
-    if (this._hass) {
-
-      // Check the selected theme
-      const isDarkTheme = this._hass.themes.darkMode;
-
-      // Create or update the style element based on the theme
-      let style = this.querySelector('style');
-      if (!style) {
-        style = document.createElement('style');
-        this.querySelector('ha-card').appendChild(style);
-      }
-
-      if ((isDarkTheme && this.config.theme === 'auto') || this.config.theme === 'dark') {
-        style.textContent = cssDataDark();
-        venusOsDashboardCard.isDark = true;
-      } else {
-        style.textContent = cssDataLight();
-        venusOsDashboardCard.isDark = false;
-      }
+    static getStubConfig(hass) {
+        return getStubConfig(hass);
     }
 
-    // Pause (or stop proceeding) if demo mode
-    if (this.config.demo === true) return;
-
-    // Pause (or stop proceeding) if debug
-    if (venusOsDashboardCard.cycle >= 10) return;
-
-    // Retrieve card parameters
-    const devices = this.config.devices || [];
-    const styles = this.config.styles || "";
-
-    // Fill boxes with given parameters
-    libVenus.fillBox(this.config, styles, venusOsDashboardCard.isDark, hass, this.content);
-
-    // Check for size change... if yes re-create lines
-    libVenus.checkReSize(devices, venusOsDashboardCard.isDark, this.content);
-
-    // Check values for path animation reversal
-    libVenus.checkForReverse(devices, hass);
-
-    // Initial launch of startPeriodicTask
-    if (!this.periodicTaskStarted) {
-      // console.log('Attempting to start startPeriodicTask...');
-      const taskStarted = libVenus.startPeriodicTask(this.config, hass);
-
-      if (taskStarted) {
-        // console.log('startPeriodicTask started successfully.');
-        this.periodicTaskStarted = true; // Mark as started
-      } else {
-        // console.warn('startPeriodicTask failed. It will be retried in the next iteration.');
-        this.periodicTaskStarted = false; // Stay on false to retry
-      }
+    static getConfigElement() {
+        return document.createElement("venus-os-editor");
     }
 
-    // venusOsDashboardCard.cycle++;
-  }
+    setConfig(config) {
+        this._ensureSkeleton();
 
-  // Method to generate configuration element
-  static getConfigElement(hass) {
-    const editor = document.createElement('venus-os-editor');
-    editor.hass = hass; // Explicitly pass hass instance to editor
-    return editor;
-  }
+        if (!config) {
+            this._showError("Venus dashboard: no configuration found.");
+            return;
+        }
 
-  /*static getStubConfig() {
-      return { 
-          demo: true,
-      };
-  }*/
+        this._config = config;
+        this._taskStarted = false;
+        this._build();
+    }
 
-  static getStubConfig(hass) {
-    // get available power entities
-    return libVenus.getDefaultConfig(hass);
-  }
+    /** Creates the shadow DOM skeleton once. */
+    _ensureSkeleton() {
+        if (this.shadowRoot.querySelector("#container")) return;
+        this.shadowRoot.innerHTML = `
+            <style id="card-style">${cssData()}</style>
+            <style id="custom-style"></style>
+            <ha-card id="container"></ha-card>
+        `;
+    }
 
-  // Method to retrieve card size
-  getCardSize() {
-    return 1;
-  }
+    /** Fills the skeleton with the current configuration. */
+    _build() {
+        this._ensureSkeleton();
+        this._themeSignature = "";
 
-  // Cleanup function if card is removed
-  disconnectedCallback() {
-    libVenus.clearAllIntervals(); // Stop all tasks
-  }
+        const container = this.shadowRoot.querySelector("#container");
+        container.innerHTML = "";
 
+        try {
+            this._venus = libVenus.renderDashboard(this._config, container, this._hass);
+            this._error = "";
+        } catch (error) {
+            this._venus = undefined;
+            this._showError(`Venus dashboard: ${error.message}`);
+            console.error("Venus dashboard: rendering failed.", error);
+        }
+
+        this._applyTheme();
+        this._applyCustomCss();
+        this._taskStarted = false;
+    }
+
+    set hass(hass) {
+        this._hass = hass;
+        if (!this._config) return;
+
+        this._applyTheme();
+
+        if (!this._venus || this._venus.demo) return;
+
+        const container = this.shadowRoot.querySelector("#container");
+        libVenus.fillBox(this._venus, hass, container);
+        libVenus.updateFlowDirections(this._venus, hass);
+
+        if (!this._taskStarted) {
+            this._taskStarted = true;
+            libVenus
+                .startPeriodicTask(this._venus, hass)
+                .then(() => libVenus.fillBox(this._venus, hass, container))
+                .catch((error) =>
+                    console.warn("Venus dashboard: history retrieval failed.", error)
+                );
+        }
+    }
+
+    get hass() {
+        return this._hass;
+    }
+
+    /** Applies the resolved theme colours as `--vv-*` custom properties. */
+    _applyTheme() {
+        const config = this._venus;
+        if (!config) return;
+
+        this._isDark = resolveIsDark(config.theme, this._hass?.themes?.darkMode);
+        const signature = `${config.theme}|${this._isDark}`;
+        if (signature === this._themeSignature) return;
+        this._themeSignature = signature;
+
+        const variables = buildStyleVariables(config, this._isDark);
+        Object.entries(variables).forEach(([name, value]) => {
+            this.style.setProperty(name, `${value}`);
+        });
+        this.setAttribute("data-theme", this._isDark ? "dark" : "light");
+    }
+
+    /** Applies the optional raw CSS escape hatches from the configuration. */
+    _applyCustomCss() {
+        const style = this.shadowRoot.querySelector("#custom-style");
+        if (!style || !this._venus) return;
+
+        const blocks = [];
+        if (this._venus.customCss) blocks.push(`:host { ${this._venus.customCss} }`);
+        if (this._venus.background.css) {
+            blocks.push(`.dashboard::before { ${this._venus.background.css} }`);
+        }
+        style.textContent = blocks.join("\n");
+    }
+
+    _showError(message) {
+        this._error = message;
+        const container = this.shadowRoot.querySelector("#container");
+        if (!container) return;
+        container.innerHTML = "";
+        const alert = document.createElement("ha-alert");
+        alert.setAttribute("alert-type", "error");
+        alert.setAttribute("title", "Victron Venus Dashboard");
+        alert.textContent = message;
+        container.appendChild(alert);
+    }
+
+    getCardSize() {
+        const aspect = this._venus?.layout?.aspect ?? 60;
+        return Math.max(2, Math.round((aspect / 60) * 4));
+    }
+
+    getGridOptions() {
+        return {
+            columns: "full",
+            min_columns: 6,
+            rows: "auto",
+        };
+    }
+
+    disconnectedCallback() {
+        libVenus.destroy();
+    }
 }
-customElements.define('venus-os-dashboard', venusOsDashboardCard);
+
+customElements.define(CARD_TYPE, VenusOsDashboardCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'venus-os-dashboard',
-  name: 'Venus OS Dashboard',
-  preview: true,
-  description: 'A DashBoard that looklike Venos OS gui-v2 from Victron.',
+    type: CARD_TYPE,
+    name: "Victron Venus Dashboard",
+    preview: true,
+    description: "A dashboard that looks like the Victron Venus GUI v2.",
+    documentationURL: "https://github.com/acdcnow/Victron-Venus-Dashboard",
 });
 
-
+export default VenusOsDashboardCard;

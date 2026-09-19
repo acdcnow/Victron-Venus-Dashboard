@@ -1,113 +1,108 @@
-export function css(user) {
-    var css =`
-    
-        #sl-tab-content {
-              display: flex;
-              flex-direction: column;
-              height: 100%;
-        }
-    
-        .content {
-            /*padding: 16px;*/
+/*
+ * Victron Venus Dashboard - visual editor stylesheet.
+ *
+ * Kept to Home Assistant theme variables and design tokens so the editor looks
+ * like every other editor in the frontend.
+ */
+
+export function css() {
+    return `
+        :host {
+            display: block;
+            color: var(--primary-text-color);
         }
 
         .editor {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            padding: 20px 0px;
-        }
-        
-        .devices-editor {
-            display: flex;
-            flex-direction: column;
-            padding: 0px 0px;
-        }
-        
-        .subTab-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px 0px;
-        }
-          
-        .col{
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-          
-        .row{
-            position: relative;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .inner {
-            padding: 10px 5px;
-        }
-        
-        /* Flex item for rows */
-        .cell{
-            flex: 1; 
+            gap: var(--ha-space-3, 12px);
+            padding-block: var(--ha-space-3, 12px);
         }
 
-        /* NEW: Specific style for stacked pickers to ensure they have height/width */
-        .stacked-picker {
+        ha-tab-group {
+            display: block;
+            margin-block-end: var(--ha-space-3, 12px);
+        }
+
+        ha-tab-group-tab {
+            flex: 1;
+        }
+
+        ha-tab-group-tab::part(base) {
             width: 100%;
-            display: block; /* Ensure it renders as block */
-            margin-bottom: 12px;
+            justify-content: center;
         }
 
         ha-expansion-panel {
-            margin-bottom: 8px;
+            display: block;
+            margin-block-end: var(--ha-space-2, 8px);
+            --expansion-panel-content-padding: 0;
         }
-        
-        .cellx1-5{
-            flex: 1.5; 
-        }
-          
-        .left{
-            position: relative;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 10px;
-        }
-          
-        .right{
-            position: relative;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .contMenu {
-            position: relative;
+
+        .panel-content {
             display: flex;
             flex-direction: column;
-            box-shadow: none;
-            border-width: 1px;
-            border-style: solid;
-            border-color: var(--outline-color);
-            border-radius: var(--ha-card-border-radius, 12px);
-            padding: 0px 8px;
-
+            gap: var(--ha-space-3, 12px);
+            padding: var(--ha-space-3, 12px) var(--ha-space-2, 8px);
         }
-        
-        .headerMenu {
+
+        ha-form {
+            display: block;
+        }
+
+        .row-header {
+            display: flex;
+            align-items: center;
+            gap: var(--ha-space-2, 8px);
+        }
+
+        .row-header ha-icon {
+            --mdc-icon-size: 20px;
+            --ha-icon-size: 20px;
+            color: var(--secondary-text-color);
+        }
+
+        .link-panel {
+            display: block;
+            margin-block-end: var(--ha-space-2, 8px);
+            border: 1px solid var(--divider-color);
+            border-radius: var(--ha-card-border-radius, 12px);
+            padding: var(--ha-space-2, 8px);
+        }
+
+        .link-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--ha-space-2, 8px);
+        }
+
+        .link-title {
             font-weight: 500;
         }
-        
-        .noGap {
-            gap: 0;
-        }
-            
-  `
-    return css;
 
+        .link-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--ha-space-1, 4px);
+        }
+
+        .empty-hint {
+            color: var(--secondary-text-color);
+            font-size: var(--ha-font-size-s, 0.875rem);
+            padding: var(--ha-space-2, 8px) 0;
+        }
+
+        ha-button {
+            margin-block-start: var(--ha-space-2, 8px);
+        }
+
+        @media (max-width: 600px) {
+            .panel-content {
+                padding-inline: 0;
+            }
+        }
+    `;
 }
+
+export default css;

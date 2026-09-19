@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Venus dashboard test harness</title>
+    <style>
+      body {
+        font-family: monospace;
+        margin: 0;
+        padding: 16px;
+      }
+      #results {
+        white-space: pre-wrap;
+        line-height: 1.4;
+      }
+      #cards {
+        display: none;
+      }
+      /* The Home Assistant components are stubs here, so give them a sane
+         display type instead of the inline default for unknown elements. */
+      ha-card,
+      ha-form,
+      ha-tab-group,
+      ha-tab-group-tab,
+      ha-expansion-panel,
+      ha-alert,
+      ha-button,
+      ha-icon-button,
+      ha-entity-picker,
+      ha-icon-picker,
+      ha-textfield,
+      ha-combo-box {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Venus dashboard test harness</h1>
+    <pre id="results">running…</pre>
+    <div id="cards"></div>
+    <script type="module" src="./tests.js"></script>
+  </body>
+</html>
